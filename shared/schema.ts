@@ -156,6 +156,7 @@ export const projects = pgTable("projects", {
   description: text("description"),
   clientId: integer("client_id").notNull(),
   ownerId: integer("owner_id").notNull(), // User who owns this project
+  organizationId: integer("organization_id"), // Organization this project belongs to
   status: text("status").notNull().default("active"), // active, completed, paused, cancelled
   progress: integer("progress").default(0),
   budget: decimal("budget", { precision: 10, scale: 2 }).notNull(),
@@ -301,6 +302,7 @@ export const projectComments = pgTable("project_comments", {
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
+  organizationId: integer("organization_id"), // Add organization context for notifications
   type: text("type").notNull(), // comment, mention, project_update, form_submission, etc.
   title: text("title").notNull(),
   message: text("message").notNull(),
@@ -315,6 +317,7 @@ export const notifications = pgTable("notifications", {
 export const supportTickets = pgTable("support_tickets", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
+  organizationId: integer("organization_id"), // Organization this ticket belongs to
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(), // bug, feature, billing, support
@@ -343,6 +346,7 @@ export const supportTicketMessages = pgTable("support_ticket_messages", {
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
   ownerId: integer("owner_id").notNull(), // User who owns this asset
+  organizationId: integer("organization_id"), // Organization this asset belongs to
   projectId: integer("project_id"), // Optional: can be user-wide
   name: text("name").notNull(),
   originalName: text("original_name").notNull(),

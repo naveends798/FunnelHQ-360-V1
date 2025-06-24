@@ -871,4 +871,99 @@ export class SupabaseStorage implements IStorage {
       hoursThisMonth: 342
     };
   }
+
+  // ========== MISSING METHODS - STUB IMPLEMENTATIONS ==========
+  
+  // Support ticket methods
+  async getSupportTickets(organizationId: number): Promise<SupportTicket[]> { return []; }
+  async getTicketsByStatus(status: string): Promise<SupportTicket[]> { return []; }
+  async getTicketsByCategory(category: string): Promise<SupportTicket[]> { return []; }
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> { return undefined; }
+  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> { 
+    return { ...ticket, id: 1, createdAt: new Date(), updatedAt: new Date() } as SupportTicket; 
+  }
+  async updateSupportTicket(id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> { return undefined; }
+  async deleteSupportTicket(id: number): Promise<boolean> { return true; }
+  async createSupportTicketMessage(message: InsertSupportTicketMessage): Promise<SupportTicketMessage> { 
+    return { ...message, id: 1, createdAt: new Date() } as SupportTicketMessage; 
+  }
+  async getSupportTicketMessages(ticketId: number): Promise<SupportTicketMessage[]> { return []; }
+
+  // Organization management methods
+  async getOrganization(id: number): Promise<any> { return undefined; }
+  async getOrganizationWithUsage(id: number): Promise<any> { return undefined; }
+  async getOrganizationWithBilling(id: number): Promise<any> { return undefined; }
+  async getOrganizationUsage(id: number): Promise<{ projects: number; collaborators: number; storage: number }> { 
+    return { projects: 0, collaborators: 0, storage: 0 }; 
+  }
+  async updateOrganizationBilling(id: number, data: any): Promise<any> { return undefined; }
+  async updateUser(id: number, data: any): Promise<User | undefined> { return undefined; }
+  async getAllUserRoles(organizationId: number): Promise<UserRole[]> { return []; }
+
+  // Project tasks methods
+  async getProjectTasks(projectId: number): Promise<TaskWithAssignee[]> { return []; }
+  async getProjectTask(id: number): Promise<ProjectTask | undefined> { return undefined; }
+  async createProjectTask(task: InsertProjectTask): Promise<ProjectTask> { 
+    return { ...task, id: 1, createdAt: new Date(), updatedAt: new Date() } as ProjectTask; 
+  }
+  async updateProjectTask(id: number, task: Partial<InsertProjectTask>): Promise<ProjectTask | undefined> { return undefined; }
+  async deleteProjectTask(id: number): Promise<boolean> { return true; }
+  async updateTaskStatus(id: number, status: string): Promise<ProjectTask | undefined> { return undefined; }
+  async updateTaskPosition(id: number, position: number): Promise<ProjectTask | undefined> { return undefined; }
+  async getTasksByStatus(projectId: number, status: string): Promise<TaskWithAssignee[]> { return []; }
+
+  // Onboarding forms methods
+  async getOnboardingForms(organizationId: number): Promise<OnboardingForm[]> { return []; }
+  async getOnboardingForm(id: number): Promise<OnboardingForm | undefined> { return undefined; }
+  async getOnboardingFormByProject(projectId: number): Promise<OnboardingForm | undefined> { return undefined; }
+  async getOnboardingFormWithSubmissions(id: number): Promise<FormWithSubmissions | undefined> { return undefined; }
+  async createOnboardingForm(form: InsertOnboardingForm): Promise<OnboardingForm> { 
+    return { ...form, id: 1, createdAt: new Date(), updatedAt: new Date() } as OnboardingForm; 
+  }
+  async updateOnboardingForm(id: number, form: Partial<InsertOnboardingForm>): Promise<OnboardingForm | undefined> { return undefined; }
+  async deleteOnboardingForm(id: number): Promise<boolean> { return true; }
+
+  // Form submissions methods
+  async getFormSubmissions(formId: number): Promise<FormSubmission[]> { return []; }
+  async getFormSubmission(id: number): Promise<FormSubmission | undefined> { return undefined; }
+  async getFormSubmissionsByProjectAndClient(projectId: number, clientId: number): Promise<FormSubmission[]> { return []; }
+  async getFormSubmissionsByProject(projectId: number): Promise<FormSubmission[]> { return []; }
+  async getFormSubmissionsByOrganization(organizationId: number): Promise<FormSubmission[]> { return []; }
+  async createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission> { 
+    return { ...submission, id: 1, submittedAt: new Date() } as FormSubmission; 
+  }
+  async updateFormSubmission(id: number, submission: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> { return undefined; }
+  async markSubmissionAsReviewed(id: number, reviewedBy: number): Promise<FormSubmission | undefined> { return undefined; }
+
+  // Comments methods
+  async getProjectComments(projectId: number): Promise<CommentWithAuthor[]> { return []; }
+  async getComment(id: number): Promise<ProjectComment | undefined> { return undefined; }
+  async getCommentThread(parentId: number): Promise<CommentWithAuthor[]> { return []; }
+  async createComment(comment: InsertProjectComment): Promise<ProjectComment> { 
+    return { ...comment, id: 1, createdAt: new Date(), updatedAt: new Date() } as ProjectComment; 
+  }
+  async updateComment(id: number, comment: Partial<InsertProjectComment>): Promise<ProjectComment | undefined> { return undefined; }
+  async deleteComment(id: number): Promise<boolean> { return true; }
+  async resolveComment(id: number, resolvedBy: number): Promise<ProjectComment | undefined> { return undefined; }
+
+  // Assets methods
+  async getAssets(organizationId: number, projectId?: number, folder?: string): Promise<Asset[]> { return []; }
+  async getAsset(id: number): Promise<Asset | undefined> { return undefined; }
+  async createAsset(asset: InsertAsset): Promise<Asset> { 
+    return { ...asset, id: 1, createdAt: new Date() } as Asset; 
+  }
+  async updateAsset(id: number, asset: Partial<InsertAsset>): Promise<Asset | undefined> { return undefined; }
+  async deleteAsset(id: number): Promise<boolean> { return true; }
+  async getAssetsByTags(organizationId: number, tags: string[]): Promise<Asset[]> { return []; }
+  async getAssetsByType(organizationId: number, type: string): Promise<Asset[]> { return []; }
+  async getFolders(organizationId: number): Promise<string[]> { return []; }
+
+  // Role assignment methods
+  async logInvitationAction(action: string, invitationId: number, performedBy?: number, metadata?: any): Promise<InvitationAudit> { 
+    return { id: 1, invitationId, action, performedBy, metadata, createdAt: new Date() } as InvitationAudit; 
+  }
+  async createRoleAssignment(assignment: InsertRoleAssignment): Promise<RoleAssignment> { 
+    return { ...assignment, id: 1, createdAt: new Date() } as RoleAssignment; 
+  }
+  async getRoleAssignmentHistory(userId: number): Promise<RoleAssignment[]> { return []; }
 }

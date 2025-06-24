@@ -897,7 +897,20 @@ export class SupabaseStorage implements IStorage {
     return { projects: 0, collaborators: 0, storage: 0 }; 
   }
   async updateOrganizationBilling(id: number, data: any): Promise<any> { return undefined; }
-  async updateUser(id: number, data: any): Promise<User | undefined> { return undefined; }
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const { data, error } = await this.supabase
+      .from('users')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+    return data || undefined;
+  }
   async getAllUserRoles(organizationId: number): Promise<UserRole[]> { return []; }
 
   // Project tasks methods
@@ -966,4 +979,25 @@ export class SupabaseStorage implements IStorage {
     return { ...assignment, id: 1, createdAt: new Date() } as RoleAssignment; 
   }
   async getRoleAssignmentHistory(userId: number): Promise<RoleAssignment[]> { return []; }
+
+  async getOrganizationWithUsage(id: number): Promise<any> {
+    return {
+      id,
+      name: 'Default Organization',
+      projects: 0,
+      collaborators: 0,
+      storage: 0
+    };
+  }
+
+  async getOrganizationWithBilling(id: number): Promise<any> {
+    return {
+      id,
+      name: 'Default Organization',
+      billing: {
+        plan: 'starter',
+        status: 'active'
+      }
+    };
+  }
 }

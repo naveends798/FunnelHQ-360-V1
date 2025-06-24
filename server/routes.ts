@@ -531,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .filter((date: Date) => !isNaN(date.getTime()));
           
           if (dueDates.length > 0) {
-            updateData.endDate = new Date(Math.max(...dueDates.map(date => date.getTime())));
+            updateData.endDate = new Date(Math.max(...dueDates.map((date: any) => date.getTime())));
           }
         }
       }
@@ -660,7 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let newEndDate = null;
         if (dueDates.length > 0) {
-          newEndDate = new Date(Math.max(...dueDates.map(date => date.getTime())));
+          newEndDate = new Date(Math.max(...dueDates.map((date: any) => date.getTime())));
         }
 
         // Update project with calculated values
@@ -734,13 +734,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: "New Task Assigned",
           message: `${assigner.name} assigned you a new task: "${task.title}"`,
           data: {
-            taskId: task.id,
-            taskTitle: task.title,
-            projectId: task.projectId,
-            projectTitle: project.title,
-            assignedBy: assigner.name,
-            priority: task.priority,
-            dueDate: task.dueDate
+            taskId: [task.id],
+            taskTitle: [task.title],
+            projectId: [task.projectId],
+            projectTitle: [project.title],
+            assignedBy: [assigner.name],
+            priority: [task.priority],
+            dueDate: [task.dueDate]
           },
           actionUrl: `/tasks/${task.id}`
         };
@@ -805,10 +805,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: "Assigned to New Project",
           message: `You have been assigned to the project "${project.title}" as ${memberData.role.replace('_', ' ')}`,
           data: { 
-            projectId: project.id,
-            projectTitle: project.title,
-            role: memberData.role,
-            assignedBy: assigner?.name || 'Admin'
+            projectId: [project.id],
+            projectTitle: [project.title],
+            role: [memberData.role],
+            assignedBy: [assigner?.name || 'Admin']
           },
           isRead: false,
           actionUrl: `/projects/${project.id}`
@@ -1203,7 +1203,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invitationData = insertUserInvitationSchema.parse(req.body);
       
       // Check team member limits before creating invitation
-      const organizationWithUsage = await storage.getOrganizationWithUsage(invitationData.organizationId);
+      const organizationId = (invitationData as any).organizationId || 1;
+      const organizationWithUsage = await storage.getOrganizationWithUsage(organizationId);
       if (!organizationWithUsage) {
         return res.status(404).json({ error: "Organization not found" });
       }
@@ -1222,7 +1223,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const invitation = await storage.createTeamInvitation(invitationData);
+      const invitation = await storage.createTeamInvitation({
+        ...invitationData,
+        organizationId
+      });
       res.status(201).json(invitation);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1504,14 +1508,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const accessibleProjectIds = new Set(userProjects.map(p => p.id));
         
         // Filter submissions to only include those from accessible projects
-        submissions = submissions.filter(submission => 
+        submissions = submissions.filter((submission: any) => 
           accessibleProjectIds.has(submission.projectId)
         );
       }
       
       // Enhance submissions with client and form data
       const enhancedSubmissions = await Promise.all(
-        submissions.map(async (submission) => {
+        submissions.map(async (submission: any) => {
           const client = await storage.getClient(submission.clientId);
           const form = await storage.getOnboardingForm(submission.formId);
           return { ...submission, client, form };
@@ -2093,11 +2097,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create notification for admins
       const notification = await storage.createNotification({
         userId: 1, // Admin user
-        organizationId: ticket.organizationId,
         type: "support",
         title: "New Support Ticket",
         message: `New ${ticket.category} ticket: ${ticket.title}`,
-        data: { ticketId: ticket.id },
+        data: { ticketId: [ticket.id] },
         isRead: false,
         actionUrl: `/support/tickets/${ticket.id}`
       });
@@ -2165,11 +2168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const notification = await storage.createNotification({
           userId: notifyUserId,
-          organizationId: ticket.organizationId,
           type: "support",
           title: "New Message",
           message: `New message on ticket: ${ticket.title}`,
-          data: { ticketId: ticket.id, messageId: message.id },
+          data: { ticketId: [ticket.id], messageId: [message.id] },
           isRead: false,
           actionUrl: `/support/tickets/${ticket.id}`
         });
@@ -2234,15 +2236,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (participant.id !== messageData.senderId) {
             await storage.createNotification({
               userId: participant.id,
-              organizationId: project.organizationId,
               type: "message",
               title: "New Message",
-              message: `New message in project: ${project.name}`,
+              message: `New message in project: ${project.title}`,
               data: { 
-                projectId: messageData.projectId,
-                messageId: message.id,
-                projectName: project.name,
-                senderName: participant.name
+                projectId: [messageData.projectId],
+                messageId: [message.id],
+                projectName: [project.title],
+                senderName: [participant.name]
               }
             });
           }
@@ -2256,7 +2257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           data: {
             projectId: messageData.projectId,
             message: message,
-            projectName: project?.name
+            projectName: project?.title
           }
         };
 
@@ -2466,11 +2467,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const testNotification = {
         userId: parseInt(userId),
-        organizationId: 1,
         type: "test",
         title: "Test Notification",
         message: `This is a test notification created at ${new Date().toLocaleTimeString()}`,
-        data: { test: true, timestamp: Date.now() },
+        data: { test: [true], timestamp: [Date.now()] },
         isRead: false,
         actionUrl: "/dashboard"
       };

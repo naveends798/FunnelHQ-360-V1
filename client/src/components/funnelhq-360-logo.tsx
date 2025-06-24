@@ -1,11 +1,11 @@
 import React from 'react';
 
-interface PortlHQLogoProps {
+interface FunnelHQ360LogoProps {
   className?: string;
   size?: number;
 }
 
-export const PortlHQLogo: React.FC<PortlHQLogoProps> = ({ className = "", size = 48 }) => {
+export const FunnelHQ360Logo: React.FC<FunnelHQ360LogoProps> = ({ className = "", size = 48 }) => {
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size }}>
       <svg
@@ -51,35 +51,35 @@ export const PortlHQLogo: React.FC<PortlHQLogoProps> = ({ className = "", size =
           strokeWidth="1"
         />
 
-        {/* Clean "P" Letter */}
+        {/* Modern "F" Letter */}
         <g transform="translate(14, 12)">
           <path
-            d="M0 0 L0 24 L4 24 L4 14 L12 14 C16 14 18 12 18 8 C18 4 16 0 12 0 Z M4 4 L4 10 L12 10 C13 10 14 9 14 8 C14 7 13 4 12 4 Z"
+            d="M0 0 L0 24 L4 24 L4 14 L16 14 L16 10 L4 10 L4 6 L18 6 L18 2 L4 2 L4 0 Z"
             fill="white"
             className="drop-shadow-sm"
           />
         </g>
 
-        {/* Modern "HQ" Badge */}
-        <g transform="translate(28, 28)">
+        {/* Modern "360" Badge */}
+        <g transform="translate(26, 28)">
           <rect 
             x="0" 
             y="0" 
-            width="16" 
+            width="18" 
             height="8" 
             rx="4" 
             fill="url(#accentGradient)"
           />
           <text 
-            x="8" 
+            x="9" 
             y="6" 
-            fontSize="5" 
+            fontSize="4" 
             fontWeight="600" 
             textAnchor="middle" 
             fill="white" 
             fontFamily="system-ui, -apple-system, sans-serif"
           >
-            HQ
+            360
           </text>
         </g>
 
@@ -91,4 +91,7 @@ export const PortlHQLogo: React.FC<PortlHQLogoProps> = ({ className = "", size =
   );
 };
 
-export default PortlHQLogo;
+export default FunnelHQ360Logo;
+
+// Legacy export for backward compatibility
+export const PortlHQLogo = FunnelHQ360Logo;

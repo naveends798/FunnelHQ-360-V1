@@ -1,11 +1,11 @@
 import React from 'react';
 
-interface PortlHQLogoLargeProps {
+interface FunnelHQ360LogoLargeProps {
   className?: string;
   size?: number;
 }
 
-export const PortlHQLogoLarge: React.FC<PortlHQLogoLargeProps> = ({ className = "", size = 120 }) => {
+export const FunnelHQ360LogoLarge: React.FC<FunnelHQ360LogoLargeProps> = ({ className = "", size = 120 }) => {
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size }}>
       <svg
@@ -56,36 +56,36 @@ export const PortlHQLogoLarge: React.FC<PortlHQLogoLargeProps> = ({ className = 
           strokeWidth="2"
         />
 
-        {/* Clean "P" Letter - Larger */}
-        <g transform="translate(35, 28) scale(2)">
+        {/* Modern "F" Letter - Larger */}
+        <g transform="translate(35, 28) scale(1.8)">
           <path
-            d="M0 0 L0 28 L6 28 L6 16 L16 16 C22 16 26 12 26 6 C26 2 22 0 16 0 Z M6 6 L6 10 L16 10 C18 10 20 8 20 6 C20 4 18 6 16 6 Z"
+            d="M0 0 L0 32 L6 32 L6 18 L20 18 L20 12 L6 12 L6 8 L24 8 L24 2 L6 2 L6 0 Z"
             fill="white"
             className="drop-shadow-md"
           />
         </g>
 
-        {/* Modern "HQ" Badge - Larger */}
-        <g transform="translate(72, 72) scale(1.5)">
+        {/* Modern "360" Badge - Larger */}
+        <g transform="translate(68, 72) scale(1.5)">
           <rect 
             x="0" 
             y="0" 
-            width="24" 
+            width="28" 
             height="12" 
             rx="6" 
             fill="url(#accentGradientLarge)"
             className="drop-shadow-lg"
           />
           <text 
-            x="12" 
+            x="14" 
             y="8.5" 
-            fontSize="7" 
+            fontSize="6" 
             fontWeight="700" 
             textAnchor="middle" 
             fill="white" 
             fontFamily="system-ui, -apple-system, sans-serif"
           >
-            HQ
+            360
           </text>
         </g>
 
@@ -105,4 +105,7 @@ export const PortlHQLogoLarge: React.FC<PortlHQLogoLargeProps> = ({ className = 
   );
 };
 
-export default PortlHQLogoLarge;
+export default FunnelHQ360LogoLarge;
+
+// Legacy export for backward compatibility
+export const PortlHQLogoLarge = FunnelHQ360LogoLarge;

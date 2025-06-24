@@ -9,7 +9,7 @@ import NotificationCenter from "@/components/notification-center";
 import { ThemeToggleCompact } from "@/components/theme-toggle";
 import { SidebarPlanInfo } from "@/components/sidebar-plan-info";
 import { ProfilePictureUpload } from "@/components/profile-picture-upload";
-import { PortlHQLogo } from "@/components/portlhq-logo";
+import { FunnelHQ360Logo } from "@/components/funnelhq-360-logo";
 import { ProTrialBadge } from "@/components/pro-trial-badge";
 import { BILLING_PLANS } from "@shared/schema";
 import { Link, useLocation } from "wouter";
@@ -179,10 +179,10 @@ export default function Sidebar() {
           <div className="p-3">
             {/* Logo */}
             <div className="flex items-center space-x-3 mb-4">
-              <PortlHQLogo size={44} />
+              <FunnelHQ360Logo size={44} />
               <div>
                 <h1 className="text-xl font-bold text-white dark:text-white tracking-tight">
-                  PortlHQ
+                  FunnelHQ 360
                 </h1>
               </div>
             </div>

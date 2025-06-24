@@ -23,7 +23,7 @@ export default function BetaBanner() {
               <span className="font-semibold">PROFESSIONAL</span>
             </div>
             <p className="text-sm lg:text-base">
-              🚀 Welcome to PortlHQ Professional! Clean, modern project management.
+              🚀 Welcome to FunnelHQ 360 Professional! Complete funnel management solution.
             </p>
           </div>
           

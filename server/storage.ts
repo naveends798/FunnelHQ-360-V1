@@ -285,7 +285,7 @@ export class MemStorage implements IStorage {
       name: "Funnel Portals Agency",
       slug: "funnel-portals",
       logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
-      subscriptionPlan: "pro",
+      plan: "pro",
       subscriptionStatus: "active",
       maxProjects: -1,
       stripeCustomerId: "cus_mock_development_123",
@@ -313,6 +313,16 @@ export class MemStorage implements IStorage {
         email: "alex@funnelportals.com",
         name: "Alex Thompson",
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
+        specialization: "project_manager",
+        companyName: "Funnel Portals Agency",
+        companyRole: "founder",
+        industry: "marketing",
+        companySize: "11-50",
+        subscriptionPlan: "pro",
+        subscriptionStatus: "active",
+        maxProjects: -1,
+        stripeCustomerId: "cus_alex_123",
+        stripeSubscriptionId: "sub_alex_123",
         createdAt: new Date("2024-01-15"),
         lastLoginAt: new Date(),
         isActive: true
@@ -324,6 +334,16 @@ export class MemStorage implements IStorage {
         email: "sarah@funnelportals.com",
         name: "Sarah Johnson",
         avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face",
+        specialization: "designer",
+        companyName: "Creative Studios",
+        companyRole: "senior_designer",
+        industry: "design",
+        companySize: "11-50",
+        subscriptionPlan: "pro",
+        subscriptionStatus: "active",
+        maxProjects: 10,
+        stripeCustomerId: "cus_sarah_123",
+        stripeSubscriptionId: "sub_sarah_123",
         createdAt: new Date("2024-02-20"),
         lastLoginAt: new Date(Date.now() - 300000), // 5 min ago
         isActive: true
@@ -335,6 +355,16 @@ export class MemStorage implements IStorage {
         email: "mike@funnelportals.com",
         name: "Mike Chen",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face",
+        specialization: "developer",
+        companyName: "Tech Solutions",
+        companyRole: "lead_developer",
+        industry: "technology",
+        companySize: "51-200",
+        subscriptionPlan: "solo",
+        subscriptionStatus: "active",
+        maxProjects: 3,
+        stripeCustomerId: "cus_mike_123",
+        stripeSubscriptionId: "sub_mike_123",
         createdAt: new Date("2024-03-10"),
         lastLoginAt: new Date(Date.now() - 3600000), // 1 hour ago
         isActive: true
@@ -348,6 +378,7 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 1,
+        organizationId: 1,
         role: "admin",
         permissions: ["*"],
         createdAt: new Date("2024-01-15")
@@ -355,6 +386,7 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 2,
+        organizationId: 1,
         role: "team_member",
         permissions: ["projects:read", "projects:write", "clients:read"],
         createdAt: new Date("2024-02-20")
@@ -362,6 +394,7 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 3,
+        organizationId: 1,
         role: "team_member",
         permissions: ["projects:read", "projects:write", "clients:read"],
         createdAt: new Date("2024-03-10")
@@ -2531,7 +2564,7 @@ export class MemStorage implements IStorage {
       storage: this.calculateStorageUsage(organizationId),
     };
 
-    const plan = (organization.subscriptionPlan as any) || 'solo';
+    const plan = organization.plan || 'solo';
     const currentPlan = BILLING_PLANS[plan as keyof typeof BILLING_PLANS] || BILLING_PLANS.solo;
 
     return {

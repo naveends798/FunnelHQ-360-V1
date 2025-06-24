@@ -2050,9 +2050,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let tickets;
       
       if (status) {
-        tickets = await storage.getTicketsByStatus(organizationId, status);
+        tickets = await storage.getTicketsByStatus(status);
       } else if (category) {
-        tickets = await storage.getTicketsByCategory(organizationId, category);
+        tickets = await storage.getTicketsByCategory(category);
       } else {
         tickets = await storage.getSupportTickets(organizationId, userId);
       }

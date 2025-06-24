@@ -1,0 +1,253 @@
+import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  User, 
+  Mail, 
+  Camera,
+  Upload
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+
+interface CreateClientModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function CreateClientModal({ open, onOpenChange }: CreateClientModalProps) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { authUser } = useAuth();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    avatar: "",
+    notes: "",
+  });
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // For now, we'll create a data URL for the image
+    // In production, you'd upload to a file storage service
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setFormData(prev => ({ ...prev, avatar: dataUrl }));
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Failed to process image:", error);
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({ ...prev, avatar: "" }));
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.email) {
+      alert("Please fill in both name and email fields");
+      return;
+    }
+
+    if (!authUser?.id) {
+      alert("You must be logged in to create a client");
+      return;
+    }
+
+    try {
+      // Include required createdBy field and organizationId for multi-tenant support
+      const clientData = {
+        ...formData,
+        createdBy: authUser.id,
+        organizationId: authUser.organizationId || 1, // Fallback to default org
+      };
+      
+      console.log("Submitting client data:", clientData);
+      
+      const response = await fetch("/api/clients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(clientData),
+      });
+
+      console.log("Response status:", response.status);
+      
+      if (response.ok) {
+        const newClient = await response.json();
+        console.log("Created client:", newClient);
+        
+        onOpenChange(false);
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          avatar: "",
+          notes: "",
+        });
+        // Invalidate and refetch clients data
+        queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+        
+        alert("Client created successfully!");
+      } else {
+        const errorData = await response.text();
+        console.error("Server error:", errorData);
+        alert(`Failed to create client: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Network error occurred while creating client");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] bg-slate-900 border-white/20">
+        <DialogHeader>
+          <DialogTitle className="text-white text-xl flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Add New Client
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Create a new client with basic information
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Profile Picture */}
+          <div>
+            <Label className="text-white flex items-center gap-2 mb-3">
+              <Camera className="h-4 w-4" />
+              Profile Picture
+            </Label>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                {formData.avatar ? (
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/20">
+                    <img 
+                      src={formData.avatar} 
+                      alt="Client avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl font-semibold">
+                    {formData.name ? formData.name.charAt(0).toUpperCase() : <User className="h-8 w-8" />}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Upload Photo"}
+                </Button>
+                {formData.avatar && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="name" className="text-white flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Name *
+            </Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Client name"
+              className="bg-white/5 border-white/20 text-white placeholder:text-slate-400"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="email" className="text-white flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="client@example.com"
+              className="bg-white/5 border-white/20 text-white placeholder:text-slate-400"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="notes" className="text-white">
+              Additional Notes
+            </Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Any additional information about this client"
+              className="bg-white/5 border-white/20 text-white placeholder:text-slate-400"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-6 border-t border-white/20">
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant="ghost"
+            className="text-slate-400 hover:text-white"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            Create Client
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

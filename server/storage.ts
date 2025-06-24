@@ -285,7 +285,6 @@ export class MemStorage implements IStorage {
       name: "Funnel Portals Agency",
       slug: "funnel-portals",
       logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
-      domain: "funnelportals.com",
       subscriptionPlan: "pro",
       subscriptionStatus: "active",
       maxProjects: -1,
@@ -314,7 +313,6 @@ export class MemStorage implements IStorage {
         email: "alex@funnelportals.com",
         name: "Alex Thompson",
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
-        organizationId: 1,
         createdAt: new Date("2024-01-15"),
         lastLoginAt: new Date(),
         isActive: true
@@ -326,7 +324,6 @@ export class MemStorage implements IStorage {
         email: "sarah@funnelportals.com",
         name: "Sarah Johnson",
         avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=40&h=40&fit=crop&crop=face",
-        organizationId: 1,
         createdAt: new Date("2024-02-20"),
         lastLoginAt: new Date(Date.now() - 300000), // 5 min ago
         isActive: true
@@ -338,7 +335,6 @@ export class MemStorage implements IStorage {
         email: "mike@funnelportals.com",
         name: "Mike Chen",
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face",
-        organizationId: 1,
         createdAt: new Date("2024-03-10"),
         lastLoginAt: new Date(Date.now() - 3600000), // 1 hour ago
         isActive: true
@@ -352,7 +348,6 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 1,
-        organizationId: 1,
         role: "admin",
         permissions: ["*"],
         createdAt: new Date("2024-01-15")
@@ -360,7 +355,6 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 2,
-        organizationId: 1,
         role: "team_member",
         permissions: ["projects:read", "projects:write", "clients:read"],
         createdAt: new Date("2024-02-20")
@@ -368,7 +362,6 @@ export class MemStorage implements IStorage {
       {
         id: this.currentUserRoleId++,
         userId: 3,
-        organizationId: 1,
         role: "team_member",
         permissions: ["projects:read", "projects:write", "clients:read"],
         createdAt: new Date("2024-03-10")
@@ -383,7 +376,6 @@ export class MemStorage implements IStorage {
     const sampleInvitations: TeamInvitation[] = [
       {
         id: this.currentTeamInvitationId++,
-        organizationId: 1,
         email: "jenny@funnelportals.com",
         role: "team_member",
         invitedBy: 1,
@@ -394,7 +386,6 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentTeamInvitationId++,
-        organizationId: 1,
         email: "david@contractor.com",
         role: "team_member",
         invitedBy: 2,
@@ -412,7 +403,6 @@ export class MemStorage implements IStorage {
       {
         id: this.currentOnboardingFormId++,
         ownerId: 1,
-        organizationId: 1,
         projectId: 1,
         title: "Website Project Onboarding",
         description: "Please provide us with all the necessary information to get started on your website project.",
@@ -513,7 +503,6 @@ export class MemStorage implements IStorage {
       {
         id: this.currentOnboardingFormId++,
         ownerId: 1,
-        organizationId: 1,
         projectId: null, // General organization form
         title: "General Client Intake Form",
         description: "A comprehensive form to gather client information for any type of project.",
@@ -825,7 +814,6 @@ export class MemStorage implements IStorage {
       {
         id: 1,
         ownerId: 1,
-        organizationId: 1,
         projectId: null, // Organization-wide asset
         name: "company-logo.svg",
         originalName: "FunnelPortals_Logo_Final.svg",
@@ -843,7 +831,6 @@ export class MemStorage implements IStorage {
       {
         id: 2,
         ownerId: 1,
-        organizationId: 1,
         projectId: null,
         name: "brand-colors.png",
         originalName: "Brand_Color_Palette.png",
@@ -861,7 +848,6 @@ export class MemStorage implements IStorage {
       {
         id: 3,
         ownerId: 1,
-        organizationId: 1,
         projectId: null,
         name: "typography-guide.pdf",
         originalName: "Typography_Guidelines_2024.pdf",
@@ -880,7 +866,6 @@ export class MemStorage implements IStorage {
       {
         id: 4,
         ownerId: 1,
-        organizationId: 1,
         projectId: 1,
         name: "hero-image.jpg",
         originalName: "TechCorp_Hero_Image_v3.jpg",
@@ -898,7 +883,6 @@ export class MemStorage implements IStorage {
       {
         id: 5,
         ownerId: 1,
-        organizationId: 1,
         projectId: 1,
         name: "wireframes.fig",
         originalName: "TechCorp_Website_Wireframes_v2.fig",
@@ -916,7 +900,6 @@ export class MemStorage implements IStorage {
       {
         id: 6,
         ownerId: 1,
-        organizationId: 1,
         projectId: 2,
         name: "product-photos.zip",
         originalName: "GreenLeaf_Product_Photography.zip",
@@ -935,7 +918,6 @@ export class MemStorage implements IStorage {
       {
         id: 7,
         ownerId: 1,
-        organizationId: 1,
         projectId: null,
         name: "email-template.html",
         originalName: "Standard_Email_Template_v1.html",
@@ -953,7 +935,6 @@ export class MemStorage implements IStorage {
       {
         id: 8,
         ownerId: 1,
-        organizationId: 1,
         projectId: null,
         name: "social-media-kit.zip",
         originalName: "Social_Media_Asset_Kit_2024.zip",
@@ -978,7 +959,6 @@ export class MemStorage implements IStorage {
     const sampleSupportTickets: SupportTicket[] = [
       {
         id: this.currentSupportTicketId++,
-        organizationId: 1,
         userId: 1,
         title: "Login Issues with New Dashboard",
         description: "I'm having trouble logging into the new dashboard. The page keeps redirecting me to an error page after I enter my credentials.",
@@ -993,7 +973,6 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentSupportTicketId++,
-        organizationId: 1,
         userId: 2,
         title: "Feature Request: Dark Mode",
         description: "Would love to have a dark mode option for better usability during late night work sessions. This would greatly improve the user experience.",
@@ -1008,7 +987,6 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentSupportTicketId++,
-        organizationId: 1,
         userId: 3,
         title: "Billing Discrepancy",
         description: "There seems to be an error in my last billing statement. I was charged for the Pro plan but I'm currently on the Basic plan.",
@@ -1023,7 +1001,6 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentSupportTicketId++,
-        organizationId: 1,
         userId: 1,
         title: "How to Export Project Data?",
         description: "I need to export all my project data for a client presentation. Could you guide me through the export process?",
@@ -1313,11 +1290,15 @@ export class MemStorage implements IStorage {
         const teamMembers = await this.getProjectTeamMembers(project.id);
         
         if (client) {
-          accessibleProjects.push({
-            ...project,
-            client,
-            teamMembers
-          });
+          const owner = this.users.get(project.ownerId);
+          if (owner) {
+            accessibleProjects.push({
+              ...project,
+              client,
+              owner,
+              teamMembers
+            });
+          }
         }
       }
     }
@@ -1332,11 +1313,15 @@ export class MemStorage implements IStorage {
     const client = this.clients.get(project.clientId);
     if (!client) return undefined;
 
+    const owner = this.users.get(project.ownerId);
+    if (!owner) return undefined;
+
     const teamMembers = await this.getProjectTeamMembers(id);
 
     return {
       ...project,
       client,
+      owner,
       teamMembers
     };
   }
@@ -2516,7 +2501,11 @@ export class MemStorage implements IStorage {
 
     // Get users with roles for this organization
     const orgUsers = Array.from(this.users.values())
-      .filter(user => user.organizationId === organizationId)
+      .filter(user => {
+        // Check if user has membership in this organization
+        return Array.from(this.userRoles.values())
+          .some(role => role.userId === user.id && role.organizationId === organizationId);
+      })
       .map(user => {
         const roles = Array.from(this.userRoles.values())
           .filter(role => role.userId === user.id && role.organizationId === organizationId);
@@ -2527,7 +2516,12 @@ export class MemStorage implements IStorage {
     const orgProjects = Array.from(this.projects.values())
       .filter(project => {
         const client = this.clients.get(project.clientId);
-        return client?.organizationId === organizationId;
+        if (!client) return false;
+        // Check if the client's creator belongs to this organization
+        const creator = this.users.get(client.createdBy);
+        if (!creator) return false;
+        return Array.from(this.userRoles.values())
+          .some(role => role.userId === creator.id && role.organizationId === organizationId);
       });
 
     // Calculate current usage
@@ -2558,22 +2552,28 @@ export class MemStorage implements IStorage {
   }
 
 
-  async getOrganizationUsage(organizationId: number) {
-    const organization = this.organizations.get(organizationId);
-    if (!organization) return null;
-
+  async getOrganizationUsage(organizationId: number): Promise<{ projects: number; collaborators: number; storage: number }> {
     const orgUsers = Array.from(this.users.values())
-      .filter(user => user.organizationId === organizationId);
+      .filter(user => {
+        // Check if user has membership in this organization
+        return Array.from(this.userRoles.values())
+          .some(role => role.userId === user.id && role.organizationId === organizationId);
+      });
 
     const orgProjects = Array.from(this.projects.values())
       .filter(project => {
         const client = this.clients.get(project.clientId);
-        return client?.organizationId === organizationId;
+        if (!client) return false;
+        // Check if the client's creator belongs to this organization
+        const creator = this.users.get(client.createdBy);
+        if (!creator) return false;
+        return Array.from(this.userRoles.values())
+          .some(role => role.userId === creator.id && role.organizationId === organizationId);
       });
 
     return {
       projects: orgProjects.length,
-      teamMembers: orgUsers.length,
+      collaborators: orgUsers.length,
       storage: this.calculateStorageUsage(organizationId),
     };
   }
@@ -2702,46 +2702,62 @@ export class MemStorage implements IStorage {
       }));
   }
 
-  async getTicketsByStatus(organizationId: number, status: string): Promise<TicketWithMessages[]> {
-    const tickets = Array.from(this.supportTickets.values())
-      .filter(ticket => ticket.organizationId === organizationId && ticket.status === status)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    return tickets.map(ticket => {
-      const messages = Array.from(this.supportTicketMessages.values())
-        .filter(msg => msg.ticketId === ticket.id)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        .map(msg => ({
-          ...msg,
-          sender: this.users.get(msg.senderId)!
-        }));
-
-      const assignee = ticket.assignedTo ? this.users.get(ticket.assignedTo) : undefined;
-      const user = this.users.get(ticket.userId)!;
-
-      return { ...ticket, messages, assignee, user };
-    });
+  async getTicketsByStatus(status: string): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.status === status)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
   }
 
-  async getTicketsByCategory(organizationId: number, category: string): Promise<TicketWithMessages[]> {
-    const tickets = Array.from(this.supportTickets.values())
-      .filter(ticket => ticket.organizationId === organizationId && ticket.category === category)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  async getTicketsByCategory(category: string): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.category === category)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+  }
 
-    return tickets.map(ticket => {
-      const messages = Array.from(this.supportTicketMessages.values())
-        .filter(msg => msg.ticketId === ticket.id)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        .map(msg => ({
-          ...msg,
-          sender: this.users.get(msg.senderId)!
-        }));
+  async updateUser(id: number, data: any): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
 
-      const assignee = ticket.assignedTo ? this.users.get(ticket.assignedTo) : undefined;
-      const user = this.users.get(ticket.userId)!;
+    const updated: User = {
+      ...user,
+      ...data,
+      updatedAt: new Date()
+    };
 
-      return { ...ticket, messages, assignee, user };
-    });
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async getOrganizationWithUsage(id: number): Promise<OrganizationWithUsage | undefined> {
+    const organization = this.organizations.get(id);
+    if (!organization) return undefined;
+
+    // Get users for this organization through memberships
+    const orgUsers = Array.from(this.users.values())
+      .filter(user => {
+        // Check if user has membership in this organization
+        return Array.from(this.userRoles.values())
+          .some(role => role.userId === user.id && role.organizationId === id);
+      });
+
+    // Get projects for this organization
+    const orgProjects = Array.from(this.projects.values())
+      .filter(project => {
+        const client = this.clients.get(project.clientId);
+        return client?.organizationId === id;
+      });
+
+    // Calculate current usage
+    const usage = {
+      projects: orgProjects.length,
+      collaborators: orgUsers.length,
+      storage: this.calculateStorageUsage(id),
+    };
+
+    return {
+      ...organization,
+      usage
+    };
   }
 }
 // Import Supabase storage for production

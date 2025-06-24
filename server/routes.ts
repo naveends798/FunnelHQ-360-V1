@@ -733,15 +733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "task_assignment",
           title: "New Task Assigned",
           message: `${assigner.name} assigned you a new task: "${task.title}"`,
-          data: {
-            taskId: task.id,
-            taskTitle: task.title,
-            projectId: task.projectId,
-            projectTitle: project.title,
-            assignedBy: assigner.name,
-            priority: task.priority,
-            dueDate: task.dueDate
-          },
+          data: [task.id, task.title, task.projectId, project.title, assigner.name, task.priority, task.dueDate] as [any, ...any[]],
           actionUrl: `/tasks/${task.id}`
         };
         
@@ -804,12 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "project_assignment",
           title: "Assigned to New Project",
           message: `You have been assigned to the project "${project.title}" as ${memberData.role.replace('_', ' ')}`,
-          data: { 
-            projectId: project.id,
-            projectTitle: project.title,
-            role: memberData.role,
-            assignedBy: assigner?.name || 'Admin'
-          },
+          data: [project.id, project.title, memberData.role, assigner?.name || 'Admin'] as [any, ...any[]],
           isRead: false,
           actionUrl: `/projects/${project.id}`
         };
@@ -1574,7 +1561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "form_submission",
           title: "New form submission",
           message: `A client has submitted the "${form.title}" form`,
-          data: { formId: form.id, submissionId: submission.id },
+          data: [form.id, submission.id] as [any, ...any[]],
           isRead: false,
           actionUrl: `/admin/forms/${form.id}/submissions/${submission.id}`
         };
@@ -2104,7 +2091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "support",
         title: "New Support Ticket",
         message: `New ${ticket.category} ticket: ${ticket.title}`,
-        data: { ticketId: ticket.id },
+        data: [ticket.id] as [any, ...any[]],
         isRead: false,
         actionUrl: `/support/tickets/${ticket.id}`
       });
@@ -2175,7 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "support",
           title: "New Message",
           message: `New message on ticket: ${ticket.title}`,
-          data: { ticketId: ticket.id, messageId: message.id },
+          data: [ticket.id, message.id] as [any, ...any[]],
           isRead: false,
           actionUrl: `/support/tickets/${ticket.id}`
         });
@@ -2243,12 +2230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: "message",
               title: "New Message",
               message: `New message in project: ${project.title}`,
-              data: { 
-                projectId: messageData.projectId,
-                messageId: message.id,
-                projectName: project.title,
-                senderName: participant.name
-              }
+              data: [messageData.projectId, message.id, project.title, participant.name] as [any, ...any[]]
             });
           }
         }
@@ -2329,11 +2311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "direct_message",
           title: "New Message from Admin",
           message: `You have received a new message from the admin team.`,
-          data: { 
-            clientId: messageData.clientId,
-            messageId: message.id,
-            senderName: "Admin"
-          }
+          data: [messageData.clientId, message.id, "Admin"] as [any, ...any[]]
         });
       }
 
@@ -2417,11 +2395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "team_direct_message",
           title: "New Message from Admin",
           message: `You have received a new message from the admin.`,
-          data: { 
-            senderId: messageData.senderId,
-            messageId: message.id,
-            senderName: "Admin"
-          }
+          data: [messageData.senderId, message.id, "Admin"] as [any, ...any[]]
         });
       }
 
@@ -2474,7 +2448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "test",
         title: "Test Notification",
         message: `This is a test notification created at ${new Date().toLocaleTimeString()}`,
-        data: { test: true, timestamp: Date.now() },
+        data: [true, Date.now()] as [any, ...any[]],
         isRead: false,
         actionUrl: "/dashboard"
       };

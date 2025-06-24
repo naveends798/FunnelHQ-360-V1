@@ -221,7 +221,7 @@ export class BillingService {
       };
     }
 
-    const invoice = await stripe!.invoices.retrieveUpcoming({
+    const invoice = await stripe!.invoices.upcoming({
       subscription: subscriptionId,
     });
 

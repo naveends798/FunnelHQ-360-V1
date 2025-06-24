@@ -29,25 +29,37 @@ export default function ClientDashboard() {
   const { user, currentRole } = useAuth();
 
   const { data: projects, isLoading: projectsLoading } = useQuery<ProjectWithClient[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["/api/projects", user?.id, user?.organizationId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      
+      // Clients should only see their own projects - filter by userId
+      if (user?.id) {
+        params.set("userId", user.id.toString());
+        params.set("organizationId", (user.organizationId || 1).toString());
+      }
+      
+      const response = await fetch(`/api/projects?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch projects");
+      return response.json();
+    },
+    staleTime: 0,
   });
 
   const { data: activities, isLoading: activitiesLoading } = useQuery<ActivityWithDetails[]>({
     queryKey: ["/api/activities"],
   });
 
-  // Filter projects for current client user (in real app, this would be based on clientId from auth)
+  // Filter projects by search term (backend already filtered by user access)
   const clientProjects = useMemo(() => {
     if (!projects) return [];
     
-    // For demo purposes, show a subset of projects
-    // In production, filter by client ID: projects.filter(p => p.clientId === user.clientId)
+    // Backend already filters projects by user access, just apply search filter
     return projects.filter(project => {
-      // Show only projects for this specific client
       const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            project.description?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
-    }).slice(0, 3); // Limit to 3 projects for demo
+    });
   }, [projects, searchTerm]);
 
   // Calculate client-specific stats

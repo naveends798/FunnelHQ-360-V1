@@ -569,11 +569,11 @@ export default function MessagesPage() {
           member.role !== 'client' // Exclude clients from team member conversations
         );
       } else if (isTeamMember) {
-        // Team members can see admins and other active team members for collaboration
+        // Team members can ONLY message admins (not other team members)
         filteredTeamMembers = teamMembers.filter(member => 
           member.id !== currentUserId && 
           (member.status === 'active' || !member.status) && // Include users without status field for backward compatibility
-          member.role !== 'client' // Exclude clients from team member conversations
+          member.role === 'admin' // Team members can ONLY message admins
         );
       } else {
         filteredTeamMembers = [];

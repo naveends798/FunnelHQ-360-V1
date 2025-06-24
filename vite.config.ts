@@ -26,8 +26,21 @@ export default defineConfig({
   root: path.resolve(import.meta.dirname, "client"),
   envDir: path.resolve(import.meta.dirname), // Look for .env files in the parent directory
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "client/dist"),
     emptyOutDir: true,
+    sourcemap: process.env.NODE_ENV !== 'production',
+    minify: 'esbuild',
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          auth: ['@clerk/clerk-react'],
+          utils: ['clsx', 'tailwind-merge', 'class-variance-authority']
+        }
+      }
+    }
   },
   server: {
     port: 3002,

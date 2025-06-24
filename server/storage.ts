@@ -2714,7 +2714,7 @@ export class MemStorage implements IStorage {
 }
 
 // Import Supabase storage for production
-import { SupabaseStorage } from './supabase-storage-simple';
+import { SupabaseStorage } from './supabase-storage';
 
 // Use Supabase in production, memory storage in development
 export const storage = process.env.NODE_ENV === 'production' 

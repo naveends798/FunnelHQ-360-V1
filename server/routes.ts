@@ -335,18 +335,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Input validation middleware
+  const validateUserId = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const userId = req.query.userId as string;
+    if (userId && !/^\d+$/.test(userId)) {
+      return res.status(400).json({ error: "Invalid user ID format" });
+    }
+    next();
+  };
+
   // Projects endpoints
-  app.get("/api/projects", async (req, res) => {
+  app.get("/api/projects", validateUserId, async (req, res) => {
     try {
       const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
       const organizationId = req.query.organizationId ? parseInt(req.query.organizationId as string) : 1;
       
       if (userId) {
-        // Return projects filtered by user access
-        const projects = await storage.getProjectsForUser(userId, organizationId);
-        res.json(projects);
+        // Check if user is admin (user ID 1 for testing)
+        if (userId === 1) {
+          // Admin users see all projects
+          const projects = await storage.getProjects();
+          const projectsWithClients = await Promise.all(
+            projects.map(async (project) => {
+              const client = await storage.getClient(project.clientId);
+              return { ...project, client };
+            })
+          );
+          res.json(projectsWithClients);
+        } else {
+          // Return projects filtered by user access
+          const projects = await storage.getProjectsForUser(userId, organizationId);
+          res.json(projects);
+        }
       } else {
-        // Return all projects (admin view)
+        // Return all projects (fallback admin view)
         const projects = await storage.getProjects();
         const projectsWithClients = await Promise.all(
           projects.map(async (project) => {
@@ -852,8 +874,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clients endpoints
-  app.get("/api/clients", async (req, res) => {
+  // Role-based access control middleware
+  const requireAdminRole = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
+      const userRole = req.query.role as string || req.headers['x-user-role'] as string;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "User ID required" });
+      }
+      
+      // For demo/testing: check if user ID 1 (default admin) or role header
+      // In production, this would check actual user roles from database/JWT
+      if (userId === 1 || userRole === 'admin') {
+        next();
+        return;
+      }
+      
+      // For other users, check if they explicitly have admin role
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Simplified role check: only user ID 1 is admin for testing
+      if (userId !== 1) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      
+      next();
+    } catch (error) {
+      console.error('Role check error:', error);
+      res.status(500).json({ error: "Failed to verify user role" });
+    }
+  };
+
+  // Clients endpoints - Admin only
+  app.get("/api/clients", validateUserId, requireAdminRole, async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -889,7 +946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients", async (req, res) => {
+  app.post("/api/clients", validateUserId, requireAdminRole, async (req, res) => {
     try {
       const clientData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(clientData);

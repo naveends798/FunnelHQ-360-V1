@@ -730,6 +730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create notification for the assigned user
         const notificationData = {
           userId: assignee.id,
+          organizationId: project.organizationId || 1,
           type: "task_assignment",
           title: "New Task Assigned",
           message: `${assigner.name} assigned you a new task: "${task.title}"`,
@@ -1920,22 +1921,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import billing service dynamically
       const { BillingService } = await import("./billing.js");
       
-      let customerId = organization.stripeCustomerId;
+      // For organizations, we'll use a mock customer ID based on organization ID
+      // In production, you'd want to store stripe customer info in a separate table
+      const customerId = `cus_org_${organizationId}`;
       
-      // Create customer if doesn't exist
-      if (!customerId) {
-        const customer = await BillingService.createCustomer(
-          organization.name + "@example.com", // You'd want to use an admin email
-          organization.name,
-          organizationId
-        );
-        customerId = customer.id;
-        
-        // Update organization with customer ID
-        await storage.updateOrganizationBilling(organizationId, {
-          stripeCustomerId: customerId
-        });
-      }
+      // Create customer if doesn't exist (this is handled in development mode by BillingService)
+      const customer = await BillingService.createCustomer(
+        organization.name + "@example.com",
+        organization.name,
+        organizationId
+      );
 
       const session = await BillingService.createCheckoutSession(
         customerId,
@@ -1958,13 +1953,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { organizationId, returnUrl } = req.body;
       
       const organization = await storage.getOrganization(organizationId);
-      if (!organization || !organization.stripeCustomerId) {
-        return res.status(404).json({ error: "Organization or customer not found" });
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
       }
+
+      // Use organization-based customer ID
+      const customerId = `cus_org_${organizationId}`;
 
       const { BillingService } = await import("./billing.js");
       const session = await BillingService.createPortalSession(
-        organization.stripeCustomerId,
+        customerId,
         returnUrl
       );
 
@@ -2088,6 +2086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create notification for admins
       const notification = await storage.createNotification({
         userId: 1, // Admin user
+        organizationId: ticket.organizationId || 1,
         type: "support",
         title: "New Support Ticket",
         message: `New ${ticket.category} ticket: ${ticket.title}`,
@@ -2159,6 +2158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const notification = await storage.createNotification({
           userId: notifyUserId,
+          organizationId: ticket.organizationId || 1,
           type: "support",
           title: "New Message",
           message: `New message on ticket: ${ticket.title}`,
@@ -2227,6 +2227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (participant.id !== messageData.senderId) {
             await storage.createNotification({
               userId: participant.id,
+              organizationId: project.organizationId || 1,
               type: "message",
               title: "New Message",
               message: `New message in project: ${project.title}`,
@@ -2445,6 +2446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const testNotification = {
         userId: parseInt(userId),
+        organizationId: 1,
         type: "test",
         title: "Test Notification",
         message: `This is a test notification created at ${new Date().toLocaleTimeString()}`,

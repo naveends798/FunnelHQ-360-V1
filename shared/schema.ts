@@ -304,7 +304,7 @@ export const notifications = pgTable("notifications", {
   type: text("type").notNull(), // comment, mention, project_update, form_submission, etc.
   title: text("title").notNull(),
   message: text("message").notNull(),
-  data: jsonb("data").$type<Record<string, any>>().default({}), // Additional data
+  data: jsonb("data").$type<any>().default({}), // Additional data - flexible structure
   isRead: boolean("is_read").default(false),
   actionUrl: text("action_url"), // URL to navigate when clicked
   createdAt: timestamp("created_at").defaultNow(),
@@ -717,6 +717,30 @@ export type FormWithSubmissions = OnboardingForm & {
   submissions: (FormSubmission & { client: Client })[];
   owner: User;
   project?: Project;
+};
+
+// Legacy compatibility types - maintain backwards compatibility
+export type TeamInvitation = UserInvitation;
+export type InsertTeamInvitation = InsertUserInvitation;
+
+// Organization types for billing integration
+export type OrganizationWithBilling = Organization & {
+  memberships?: OrganizationMembership[];
+  currentPlan: PlanDetails;
+  usage: {
+    projects: number;
+    collaborators: number;
+    storage: number;
+  };
+};
+
+// Enhanced organization types
+export type OrganizationWithUsage = Organization & {
+  usage: {
+    projects: number;
+    collaborators: number;
+    storage: number;
+  };
 };
 
 export type CommentWithReplies = DesignComment & {

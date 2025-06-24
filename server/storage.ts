@@ -1,5 +1,5 @@
 import { 
-  users, clients, projects, milestones, activities, documents, messages, directMessages, teamDirectMessages, notifications, userInvitations, userCollaborations, onboardingForms, formSubmissions, projectComments, assets, projectTasks, supportTickets, supportTicketMessages, projectTeamMembers, invitationAudit, roleAssignments,
+  users, clients, projects, milestones, activities, documents, messages, directMessages, teamDirectMessages, notifications, userInvitations, userCollaborations, onboardingForms, formSubmissions, projectComments, assets, projectTasks, supportTickets, supportTicketMessages, projectTeamMembers, invitationAudit, roleAssignments, organizations,
   type User, type InsertUser,
   type Client, type InsertClient,
   type Project, type InsertProject, type ProjectWithClient, type ProjectWithTeamMembers,
@@ -25,6 +25,8 @@ import {
   type SupportTicket, type InsertSupportTicket,
   type SupportTicketMessage, type InsertSupportTicketMessage,
   type TicketWithMessages,
+  type TeamInvitation, type InsertTeamInvitation,
+  type Organization, type OrganizationWithBilling, type OrganizationWithUsage,
   BILLING_PLANS
 } from "@shared/schema";
 
@@ -189,6 +191,26 @@ export interface IStorage {
   updateTaskStatus(id: number, status: string): Promise<ProjectTask | undefined>;
   updateTaskPosition(id: number, position: number): Promise<ProjectTask | undefined>;
   getTasksByStatus(projectId: number, status: string): Promise<TaskWithAssignee[]>;
+
+  // Support Tickets
+  getSupportTickets(organizationId: number): Promise<SupportTicket[]>;
+  getTicketsByStatus(status: string): Promise<SupportTicket[]>;
+  getTicketsByCategory(category: string): Promise<SupportTicket[]>;
+  getSupportTicket(id: number): Promise<SupportTicket | undefined>;
+  createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket>;
+  updateSupportTicket(id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined>;
+  deleteSupportTicket(id: number): Promise<boolean>;
+  createSupportTicketMessage(message: InsertSupportTicketMessage): Promise<SupportTicketMessage>;
+  getSupportTicketMessages(ticketId: number): Promise<SupportTicketMessage[]>;
+
+  // Organization Management
+  getOrganization(id: number): Promise<Organization | undefined>;
+  getOrganizationWithUsage(id: number): Promise<OrganizationWithUsage | undefined>;
+  getOrganizationWithBilling(id: number): Promise<OrganizationWithBilling | undefined>;
+  getOrganizationUsage(id: number): Promise<{ projects: number; collaborators: number; storage: number }>;
+  updateOrganizationBilling(id: number, data: any): Promise<Organization | undefined>;
+  updateUser(id: number, data: any): Promise<User | undefined>;
+  getAllUserRoles(organizationId: number): Promise<UserRole[]>;
 
   // Stats
   getStats(): Promise<{
@@ -2710,6 +2732,129 @@ export class MemStorage implements IStorage {
 
       return { ...ticket, messages, assignee, user };
     });
+  }
+
+  // Missing support ticket methods - returning stub implementations
+  async getSupportTickets(organizationId: number): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.organizationId === organizationId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getTicketsByStatus(status: string): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.status === status);
+  }
+
+  async getTicketsByCategory(category: string): Promise<SupportTicket[]> {
+    return Array.from(this.supportTickets.values())
+      .filter(ticket => ticket.category === category);
+  }
+
+  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
+    return this.supportTickets.get(id);
+  }
+
+  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> {
+    const newTicket: SupportTicket = {
+      ...ticket,
+      id: this.currentSupportTicketId++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      organizationId: 1 // Default for MemStorage
+    };
+    this.supportTickets.set(newTicket.id, newTicket);
+    return newTicket;
+  }
+
+  async updateSupportTicket(id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
+    const existing = this.supportTickets.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...ticket, updatedAt: new Date() };
+    this.supportTickets.set(id, updated);
+    return updated;
+  }
+
+  async deleteSupportTicket(id: number): Promise<boolean> {
+    return this.supportTickets.delete(id);
+  }
+
+  async createSupportTicketMessage(message: InsertSupportTicketMessage): Promise<SupportTicketMessage> {
+    const newMessage: SupportTicketMessage = {
+      ...message,
+      id: this.currentSupportTicketMessageId++,
+      createdAt: new Date()
+    };
+    this.supportTicketMessages.set(newMessage.id, newMessage);
+    return newMessage;
+  }
+
+  async getSupportTicketMessages(ticketId: number): Promise<SupportTicketMessage[]> {
+    return Array.from(this.supportTicketMessages.values())
+      .filter(msg => msg.ticketId === ticketId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  // Organization management methods - stub implementations
+  async getOrganization(id: number): Promise<Organization | undefined> {
+    return this.organizations.get(id);
+  }
+
+  async getOrganizationWithUsage(id: number): Promise<OrganizationWithUsage | undefined> {
+    const org = this.organizations.get(id);
+    if (!org) return undefined;
+    return {
+      ...org,
+      usage: {
+        projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
+        collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
+        storage: 0
+      }
+    };
+  }
+
+  async getOrganizationWithBilling(id: number): Promise<OrganizationWithBilling | undefined> {
+    const org = this.organizations.get(id);
+    if (!org) return undefined;
+    return {
+      ...org,
+      currentPlan: BILLING_PLANS.pro,
+      usage: {
+        projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
+        collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
+        storage: 0
+      }
+    };
+  }
+
+  async getOrganizationUsage(id: number): Promise<{ projects: number; collaborators: number; storage: number }> {
+    return {
+      projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
+      collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
+      storage: 0
+    };
+  }
+
+  async updateOrganizationBilling(id: number, data: any): Promise<Organization | undefined> {
+    const org = this.organizations.get(id);
+    if (!org) return undefined;
+    const updated = { ...org, ...data };
+    this.organizations.set(id, updated);
+    return updated;
+  }
+
+  async updateUser(id: number, data: any): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...data };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async getAllUserRoles(organizationId: number): Promise<UserRole[]> {
+    return Array.from(this.userRoles.values())
+      .filter(role => role.organizationId === organizationId);
   }
 }
 

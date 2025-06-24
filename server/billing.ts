@@ -7,7 +7,7 @@ const isDevelopmentMode = process.env.NODE_ENV === 'development' &&
 
 // Initialize Stripe only if we have real keys
 export const stripe = isDevelopmentMode ? null : new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2023-10-16',
 });
 
 // Stripe Product IDs mapping (you'll need to create these in your Stripe dashboard)
@@ -221,7 +221,7 @@ export class BillingService {
       };
     }
 
-    const invoice = await stripe!.invoices.retrieveUpcoming({
+    const invoice = await stripe!.invoices.upcoming({
       subscription: subscriptionId,
     });
 
@@ -242,10 +242,10 @@ export class BillingService {
         limit: limits.projects === -1 ? 'unlimited' : limits.projects,
         percentage: limits.projects === -1 ? 0 : Math.min(100, (currentUsage.projects / limits.projects) * 100),
       },
-      teamMembers: {
-        current: currentUsage.teamMembers || 0,
-        limit: limits.teamMembers === -1 ? 'unlimited' : limits.teamMembers,
-        percentage: limits.teamMembers === -1 ? 0 : Math.min(100, (currentUsage.teamMembers / limits.teamMembers) * 100),
+      collaborators: {
+        current: currentUsage.collaborators || 0,
+        limit: limits.collaborators === -1 ? 'unlimited' : limits.collaborators,
+        percentage: limits.collaborators === -1 ? 0 : Math.min(100, (currentUsage.collaborators / limits.collaborators) * 100),
       },
       storage: {
         current: currentUsage.storage || 0,
@@ -287,10 +287,10 @@ export class BillingService {
     }
 
     // Check team member limits
-    if (limits.teamMembers !== -1 && currentUsage.teamMembers >= limits.teamMembers) {
-      exceeded.push('teamMembers');
-    } else if (limits.teamMembers !== -1 && currentUsage.teamMembers >= limits.teamMembers * 0.8) {
-      warnings.push('teamMembers');
+    if (limits.collaborators !== -1 && currentUsage.collaborators >= limits.collaborators) {
+      exceeded.push('collaborators');
+    } else if (limits.collaborators !== -1 && currentUsage.collaborators >= limits.collaborators * 0.8) {
+      warnings.push('collaborators');
     }
 
     // Check storage limits

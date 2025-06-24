@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import { useLocation } from "wouter";
 
 interface OnboardingForm {
   id: number;
+  ownerId: number;
   organizationId: number;
   projectId?: number | null;
   title: string;
@@ -43,48 +45,34 @@ interface OnboardingForm {
 
 export default function OnboardingPage() {
   const [location, setLocation] = useLocation();
-  const [forms, setForms] = useState<OnboardingForm[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showFormBuilder, setShowFormBuilder] = useState(false);
   const [editingForm, setEditingForm] = useState<OnboardingForm | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "active" | "templates">("all");
-  const [projects, setProjects] = useState<any[]>([]);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [formToAssign, setFormToAssign] = useState<OnboardingForm | null>(null);
 
-  useEffect(() => {
-    fetchForms();
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch('/api/projects');
-      if (response.ok) {
-        const projectsData = await response.json();
-        setProjects(projectsData);
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    }
-  };
-
-  const fetchForms = async () => {
-    try {
-      setLoading(true);
+  // Fetch forms using React Query
+  const { data: forms = [], isLoading: loading } = useQuery<OnboardingForm[]>({
+    queryKey: ["/api/onboarding-forms", { organizationId: 1 }],
+    queryFn: async () => {
       const response = await fetch('/api/onboarding-forms?organizationId=1');
-      if (response.ok) {
-        const formsData = await response.json();
-        
-        setForms(formsData);
-      }
-    } catch (error) {
-      console.error('Error fetching forms:', error);
-    } finally {
-      setLoading(false);
+      if (!response.ok) throw new Error('Failed to fetch onboarding forms');
+      return response.json();
     }
-  };
+  });
+
+  // Fetch projects using React Query
+  const { data: projects = [] } = useQuery<any[]>({
+    queryKey: ["/api/projects"],
+    queryFn: async () => {
+      const response = await fetch('/api/projects');
+      if (!response.ok) throw new Error('Failed to fetch projects');
+      return response.json();
+    }
+  });
+
 
   const handleCreateForm = () => {
     setEditingForm(null);
@@ -115,7 +103,8 @@ export default function OnboardingPage() {
         console.log('Form saved successfully:', savedForm);
         setShowFormBuilder(false);
         setEditingForm(null);
-        fetchForms();
+        // Invalidate the React Query cache to refetch forms
+        queryClient.invalidateQueries({ queryKey: ["/api/onboarding-forms"] });
       } else {
         const errorText = await response.text();
         console.error('Error saving form:', response.status, errorText);
@@ -133,7 +122,7 @@ export default function OnboardingPage() {
     try {
       const response = await fetch(`/api/onboarding-forms/${formId}`, { method: 'DELETE' });
       if (response.ok) {
-        fetchForms();
+        queryClient.invalidateQueries({ queryKey: ["/api/onboarding-forms"] });
       }
     } catch (error) {
       console.error('Error deleting form:', error);
@@ -158,7 +147,7 @@ export default function OnboardingPage() {
       });
 
       if (response.ok) {
-        fetchForms();
+        queryClient.invalidateQueries({ queryKey: ["/api/onboarding-forms"] });
       }
     } catch (error) {
       console.error('Error duplicating form:', error);
@@ -195,7 +184,7 @@ export default function OnboardingPage() {
         });
 
         if (response.ok) {
-          fetchForms();
+          queryClient.invalidateQueries({ queryKey: ["/api/onboarding-forms"] });
           const project = projects.find(p => p.id === projectId);
           console.log(`Form "${form.title}" has been assigned to project "${project?.title || 'Unknown'}"`);
         } else {
@@ -210,7 +199,7 @@ export default function OnboardingPage() {
           });
           
           if (response.ok) {
-            fetchForms();
+            queryClient.invalidateQueries({ queryKey: ["/api/onboarding-forms"] });
             console.log(`Form assignment has been removed`);
           } else {
             throw new Error('Failed to remove form assignment');

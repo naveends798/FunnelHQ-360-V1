@@ -7,7 +7,7 @@ import ProjectCard from "@/components/project-card";
 import ProjectFilters from "@/components/project-filters";
 import ActivityFeed from "@/components/activity-feed";
 import QuickActions from "@/components/quick-actions";
-import NotificationTest from "@/components/notification-test";
+// import NotificationTest from "@/components/notification-test";
 import NotificationCenter from "@/components/notification-center";
 import BetaBanner from "@/components/beta-banner";
 import { TrialBanner } from "@/components/trial-banner";
@@ -378,7 +378,7 @@ export default function Dashboard() {
       </motion.div>
       
       {/* Test notification button for development */}
-      <NotificationTest />
+      {/* <NotificationTest /> */}
       
       {/* Create Project Modal */}
       {(hasPermission("projects", "create") || currentRole === "admin") && (

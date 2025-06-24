@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from 'ws';
 import { storage } from "./storage";
@@ -6,21 +7,109 @@ import { insertUserSchema, insertClientSchema, insertProjectSchema, insertMilest
 import { z } from "zod";
 import { BillingService } from "./billing";
 import { handleClerkWebhook } from "./api/clerk-webhooks";
-import { testWebhookEndpoint, simulateClerkWebhook } from "./api/test-webhook";
+// import { testWebhookEndpoint, simulateClerkWebhook } from "./api/test-webhook";
 import { createOrUpdateUser, getUserByEmail, updateUser, deleteUser, getUserUsage } from "./api/supabase-users";
 import { createOrUpdateOrganization, createOrganizationMembership, createOrganizationInvitation, getOrganizationByClerkId, updateInvitationStatus } from "./api/supabase-organizations";
-import { sendClientProjectAssignmentEmail, sendTestEmail } from "./api/email-service";
+import { sendClientProjectAssignmentEmail, sendTeamProjectAssignmentEmail, sendTestEmail } from "./api/email-service";
 import invitationRoutes from "./api/invitations";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   let serverInstance: any = null;
+  
+  // Configure multer for avatar uploads
+  const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const storage_config = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, `avatar-${uniqueSuffix}${path.extname(file.originalname)}`);
+    }
+  });
+
+  const upload = multer({
+    storage: storage_config,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = /jpeg|jpg|png|gif|webp/;
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      const mimetype = allowedTypes.test(file.mimetype);
+
+      if (mimetype && extname) {
+        return cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed!'));
+      }
+    }
+  });
+
+  // Avatar upload endpoint
+  app.post("/api/users/:userId/avatar", upload.single('avatar'), async (req, res) => {
+    console.log('Avatar upload request received for user:', req.params.userId);
+    console.log('File in request:', req.file ? 'YES' : 'NO');
+    if (req.file) {
+      console.log('File details:', req.file.originalname, req.file.mimetype, req.file.size);
+    }
+    
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (!req.file) {
+        console.log('No file in request body');
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // Generate avatar URL
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      
+      // Update user's avatar in database
+      const updatedUser = await storage.updateUser(userId, { avatar: avatarUrl });
+      
+      if (!updatedUser) {
+        // Clean up uploaded file if user update fails
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json({
+        success: true,
+        avatarUrl: avatarUrl,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      // Clean up uploaded file on error
+      if (req.file) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (e) {
+          console.error("Error cleaning up file:", e);
+        }
+      }
+      res.status(500).json({ error: "Failed to upload avatar" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
   // Clerk Webhook endpoints
   app.post("/api/clerk/webhook", handleClerkWebhook);
   
   // Test webhook endpoints (development only)
   if (process.env.NODE_ENV !== 'production') {
-    app.post("/api/test/webhook", testWebhookEndpoint);
-    app.post("/api/test/clerk-webhook", simulateClerkWebhook);
+    // app.post("/api/test/webhook", testWebhookEndpoint);
+    // app.post("/api/test/clerk-webhook", simulateClerkWebhook);
   }
 
   // Supabase User Management endpoints
@@ -38,8 +127,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/supabase/organizations/invitations/:invitationId", updateInvitationStatus);
 
   // Email notification endpoints
-  app.post("/api/emails/client-project-assignment", sendClientProjectAssignmentEmail);
-  app.post("/api/emails/test", sendTestEmail);
+  app.post("/api/email/client-project-assignment", sendClientProjectAssignmentEmail);
+  app.post("/api/email/team-project-assignment", sendTeamProjectAssignmentEmail);
+  app.post("/api/email/test", sendTestEmail);
 
   // Use the new invitation routes
   app.use("/api/invitations", invitationRoutes);
@@ -339,7 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             // Send email notification
-            const emailResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3002'}/api/emails/client-project-assignment`, {
+            const emailResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3002'}/api/email/client-project-assignment`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -591,6 +681,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  // Task assignment notification endpoint
+  app.post("/api/tasks/:id/assign", async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const { assignedTo, assignedBy } = req.body;
+      
+      // Get task details
+      const task = await storage.getProjectTask(taskId);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Update task assignment
+      await storage.updateProjectTask(taskId, { assignedTo });
+      
+      // Get assignee and assigner details
+      const assignee = await storage.getUser(assignedTo);
+      const assigner = await storage.getUser(assignedBy);
+      const project = await storage.getProject(task.projectId);
+      
+      if (assignee && assigner && project) {
+        // Create notification for the assigned user
+        const notificationData = {
+          userId: assignee.id,
+          type: "task_assignment",
+          title: "New Task Assigned",
+          message: `${assigner.name} assigned you a new task: "${task.title}"`,
+          data: {
+            taskId: task.id,
+            taskTitle: task.title,
+            projectId: task.projectId,
+            projectTitle: project.title,
+            assignedBy: assigner.name,
+            priority: task.priority,
+            dueDate: task.dueDate
+          },
+          actionUrl: `/tasks/${task.id}`
+        };
+        
+        const notification = await storage.createNotification(notificationData);
+        
+        // Broadcast the notification via WebSocket
+        if (serverInstance && serverInstance.broadcastNotification) {
+          serverInstance.broadcastNotification(assignee.id, notification);
+        }
+        
+        res.json({ 
+          success: true, 
+          message: "Task assigned and notification sent",
+          notification 
+        });
+      } else {
+        res.json({ 
+          success: true, 
+          message: "Task assigned but notification could not be sent" 
+        });
+      }
+    } catch (error) {
+      console.error("Task assignment error:", error);
+      res.status(500).json({ error: "Failed to assign task" });
     }
   });
 
@@ -901,6 +1054,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to check user roles
+  app.get("/api/debug/user-roles", async (req, res) => {
+    try {
+      const userRoles = await storage.getAllUserRoles();
+      res.json(userRoles);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get user roles" });
+    }
+  });
+
   // Team Management endpoints
   app.get("/api/team/members", async (req, res) => {
     try {
@@ -919,6 +1082,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(invitations);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch team invitations" });
+    }
+  });
+
+  app.post("/api/team/add-member", upload.single('avatar'), async (req, res) => {
+    try {
+      const { organizationId, email, name, role, specialization } = req.body;
+      
+      // For now, skip limit checking and just create the user
+      // TODO: Implement proper limit checking when getOrganizationWithUsage is available
+      
+      // Handle avatar upload
+      let avatarUrl = null;
+      if (req.file) {
+        avatarUrl = `/uploads/avatars/${req.file.filename}`;
+        console.log('🔍 Avatar uploaded:', avatarUrl);
+      }
+      
+      // Create user in the database
+      const userData = {
+        name: name || email.split('@')[0],
+        email,
+        specialization: specialization || 'developer',
+        lastLoginAt: null,
+        avatar: avatarUrl,
+        isActive: true
+      };
+      
+      const user = await storage.createUser(userData);
+      console.log('🔍 Created user:', user);
+      
+      // Add user role entry
+      const userRole = await storage.updateUserRole(user.id, parseInt(organizationId), role);
+      console.log('🔍 Created user role:', userRole);
+      
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Failed to add team member:", error);
+      
+      // Clean up uploaded file if user creation fails
+      if (req.file) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (e) {
+          console.error("Error cleaning up file:", e);
+        }
+      }
+      
+      res.status(500).json({ 
+        error: "Failed to add team member", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
@@ -1025,6 +1239,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/onboarding-forms", async (req, res) => {
     try {
       const organizationId = req.query.organizationId ? parseInt(req.query.organizationId as string) : 1;
+      const forms = await storage.getOnboardingForms(organizationId);
+      res.json(forms);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch onboarding forms" });
+    }
+  });
+
+  // Get onboarding forms by organization ID (path parameter)
+  app.get("/api/onboarding-forms/:organizationId", async (req, res) => {
+    try {
+      const organizationId = parseInt(req.params.organizationId);
       const forms = await storage.getOnboardingForms(organizationId);
       res.json(forms);
     } catch (error) {

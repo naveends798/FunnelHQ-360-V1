@@ -11,6 +11,7 @@ interface UseTeamReturn {
   invitations: TeamInvitation[];
   loading: boolean;
   error: string | null;
+  addTeamMember: (name: string, email: string, role: string, specialization?: string, avatarFile?: File | null) => Promise<void>;
   inviteUser: (email: string, role: string, specialization?: string) => Promise<void>;
   resendInvitation: (invitationId: number) => Promise<void>;
   cancelInvitation: (invitationId: number) => Promise<void>;
@@ -62,6 +63,46 @@ export function useTeam({ organizationId }: UseTeamOptions): UseTeamReturn {
     await Promise.all([fetchTeamMembers(), fetchInvitations()]);
     setLoading(false);
   }, [fetchTeamMembers, fetchInvitations]);
+
+  const addTeamMember = useCallback(async (name: string, email: string, role: string, specialization?: string, avatarFile?: File | null) => {
+    try {
+      console.log('🔍 Adding team member:', { organizationId, name, email, role, specialization, hasAvatar: !!avatarFile });
+      
+      const formData = new FormData();
+      formData.append('organizationId', organizationId.toString());
+      formData.append('email', email);
+      formData.append('name', name);
+      formData.append('role', role);
+      if (specialization) {
+        formData.append('specialization', specialization);
+      }
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+
+      const response = await fetch("/api/team/add-member", {
+        method: "POST",
+        body: formData, // Don't set Content-Type header when using FormData
+      });
+
+      console.log('🔍 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('❌ API Error:', errorData);
+        throw new Error(`Failed to add team member: ${response.status} ${errorData}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Team member added successfully:', result);
+
+      // Refresh team members list
+      await fetchTeamMembers();
+    } catch (err) {
+      console.error('❌ Add team member error:', err);
+      throw new Error(err instanceof Error ? err.message : "Failed to add team member");
+    }
+  }, [organizationId, fetchTeamMembers]);
 
   const inviteUser = useCallback(async (email: string, role: string, specialization?: string) => {
     try {
@@ -209,6 +250,7 @@ export function useTeam({ organizationId }: UseTeamOptions): UseTeamReturn {
     invitations,
     loading,
     error,
+    addTeamMember,
     inviteUser,
     resendInvitation,
     cancelInvitation,

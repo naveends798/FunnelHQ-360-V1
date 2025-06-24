@@ -40,9 +40,19 @@ export function ProfilePictureUpload({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('File selected:', file);
+    
     if (file) {
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified
+      });
+      
       // Validate file type
       if (!file.type.startsWith('image/')) {
+        console.error('Invalid file type:', file.type);
         toast({
           title: "Invalid file type",
           description: "Please select an image file (JPG, PNG, GIF, etc.)",
@@ -53,6 +63,7 @@ export function ProfilePictureUpload({
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
+        console.error('File too large:', file.size);
         toast({
           title: "File too large",
           description: "Please select an image smaller than 5MB",
@@ -61,35 +72,60 @@ export function ProfilePictureUpload({
         return;
       }
 
+      console.log('File validation passed, setting selected file');
       setSelectedFile(file);
       
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewUrl(e.target?.result as string);
+        console.log('Preview URL created');
       };
       reader.readAsDataURL(file);
+    } else {
+      console.log('No file selected');
     }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      console.error('No file selected');
+      return;
+    }
 
+    console.log('Starting upload for file:', selectedFile.name, selectedFile.type, selectedFile.size);
     setUploading(true);
     try {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('avatar', selectedFile);
-      formData.append('userId', '1'); // TODO: Get from auth context
+      
+      console.log('FormData created, making request to /api/users/1/avatar');
 
-      // Mock upload - in a real app, this would upload to your server/cloud storage
-      // For now, we'll simulate an upload and use the preview URL
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate upload delay
+      // Upload to server
+      const response = await fetch('/api/users/1/avatar', { // TODO: Get userId from auth context
+        method: 'POST',
+        body: formData,
+      });
+      
+      console.log('Response received:', response.status, response.statusText);
 
-      // In a real implementation, you'd get the uploaded URL from the server response
-      const uploadedUrl = previewUrl; // For demo purposes
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed with status:', response.status, 'Response:', errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText || 'Upload failed' };
+        }
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+      }
 
-      onAvatarUpdate(uploadedUrl!);
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      
+      onAvatarUpdate(result.avatarUrl);
       
       toast({
         title: "Profile picture updated",
@@ -101,9 +137,10 @@ export function ProfilePictureUpload({
       setPreviewUrl(null);
       onOpenChange(false);
     } catch (error) {
+      console.error('Avatar upload error:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload profile picture. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload profile picture. Please try again.",
         variant: "destructive",
       });
     } finally {

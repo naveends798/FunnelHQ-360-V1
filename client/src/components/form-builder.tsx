@@ -48,6 +48,7 @@ interface FormField {
 
 interface OnboardingForm {
   id?: number;
+  ownerId: number;
   organizationId: number;
   projectId?: number | null;
   title: string;
@@ -80,6 +81,7 @@ const FIELD_TYPES = [
 export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps) {
   const [formData, setFormData] = useState<Omit<OnboardingForm, 'id'>>(() => {
     const defaults = {
+      ownerId: 1, // User who owns this form
       organizationId: 1,
       projectId: null as number | null,
       title: "",
@@ -103,6 +105,7 @@ export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps
   useEffect(() => {
     if (form) {
       const defaults = {
+        ownerId: 1, // User who owns this form
         organizationId: 1,
         projectId: null as number | null,
         title: "",

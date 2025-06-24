@@ -166,6 +166,7 @@ export const projects = pgTable("projects", {
   priority: text("priority").default("medium"), // low, medium, high
   teamMembers: jsonb("team_members").$type<string[]>().default([]), // Deprecated: use project_team_members table
   tags: jsonb("tags").$type<string[]>().default([]),
+  onboardingFormId: integer("onboarding_form_id"), // Reference to assigned onboarding form
   createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -252,6 +253,7 @@ export const teamDirectMessages = pgTable("team_direct_messages", {
 export const onboardingForms = pgTable("onboarding_forms", {
   id: serial("id").primaryKey(),
   ownerId: integer("owner_id").notNull(), // User who owns this form
+  organizationId: integer("organization_id").notNull(), // Organization this form belongs to
   projectId: integer("project_id"), // Optional: form can be project-specific
   title: text("title").notNull(),
   description: text("description"),

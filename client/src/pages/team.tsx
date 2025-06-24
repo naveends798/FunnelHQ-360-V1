@@ -37,7 +37,9 @@ import {
   Edit,
   Settings,
   AlertTriangle,
-  ArrowUpRight
+  ArrowUpRight,
+  Upload,
+  Camera
 } from "lucide-react";
 
 // Helper functions for team member display
@@ -112,9 +114,12 @@ export default function TeamPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("team_member");
   const [inviteSpecialization, setInviteSpecialization] = useState<string>("developer");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isAssignmentMatrixOpen, setIsAssignmentMatrixOpen] = useState(false);
 
   const { user, isAdmin, currentRole } = useAuth();
@@ -139,6 +144,7 @@ export default function TeamPage() {
     invitations,
     loading,
     error,
+    addTeamMember,
     inviteUser,
     resendInvitation,
     cancelInvitation,
@@ -158,23 +164,38 @@ export default function TeamPage() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleInviteUser = async () => {
-    if (!inviteEmail || !inviteRole) return;
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddTeamMember = async () => {
+    if (!inviteName || !inviteEmail || !inviteRole) return;
 
     try {
-      await inviteUser(inviteEmail, inviteRole, inviteSpecialization);
+      await addTeamMember(inviteName, inviteEmail, inviteRole, inviteSpecialization, avatarFile);
+      setInviteName("");
       setInviteEmail("");
       setInviteRole("team_member");
       setInviteSpecialization("developer");
+      setAvatarFile(null);
+      setAvatarPreview(null);
       setIsInviteDialogOpen(false);
       
       toast({
-        title: "Invitation sent",
-        description: `Invitation sent to ${inviteEmail} as ${inviteSpecialization}`,
+        title: "Team member added",
+        description: `${inviteName} has been added as ${inviteSpecialization}`,
       });
     } catch (error) {
       toast({
-        title: "Error sending invitation",
+        title: "Error adding team member",
         description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
@@ -315,18 +336,31 @@ export default function TeamPage() {
                       title={currentPlan === 'solo' && teamMembers.length >= BILLING_PLANS.solo.limits.teamMembers ? "Solo plan is limited to 1 team member. Upgrade to Pro for unlimited team members." : ""}
                     >
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Invite Member
+                      Add Team Member
                     </Button>
                   </DialogTrigger>
                 <DialogContent className="glass-dark border-white/10">
                   <DialogHeader>
-                    <DialogTitle className="text-white">Invite Team Member</DialogTitle>
+                    <DialogTitle className="text-white">Add Team Member</DialogTitle>
                     <DialogDescription className="text-slate-400">
-                      Send an invitation to join your team
+                      Add a new team member to your organization
                     </DialogDescription>
                   </DialogHeader>
                   
                   <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name" className="text-white">Name *</Label>
+                      <Input
+                        id="name"
+                        type="text"
+                        placeholder="Enter full name"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        className="bg-white/5 border-white/10 text-white"
+                        required
+                      />
+                    </div>
+
                     <div>
                       <Label htmlFor="email" className="text-white">Email Address</Label>
                       <Input
@@ -337,6 +371,46 @@ export default function TeamPage() {
                         onChange={(e) => setInviteEmail(e.target.value)}
                         className="bg-white/5 border-white/10 text-white"
                       />
+                    </div>
+
+                    <div>
+                      <Label className="text-white">Profile Picture</Label>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          {avatarPreview ? (
+                            <img
+                              src={avatarPreview}
+                              alt="Profile preview"
+                              className="w-16 h-16 rounded-full object-cover border-2 border-white/20"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center">
+                              <User className="h-8 w-8 text-white/40" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            id="avatar"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="avatar"
+                            className="flex items-center justify-center px-4 py-2 border border-white/20 rounded-md cursor-pointer hover:bg-white/10 transition-colors"
+                          >
+                            <Upload className="h-4 w-4 mr-2 text-white" />
+                            <span className="text-white text-sm">
+                              {avatarFile ? 'Change Photo' : 'Upload Photo'}
+                            </span>
+                          </label>
+                          <p className="text-xs text-slate-400 mt-1">
+                            PNG, JPG, GIF up to 5MB
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     
                     <div>
@@ -378,12 +452,12 @@ export default function TeamPage() {
                         Cancel
                       </Button>
                       <Button
-                        onClick={handleInviteUser}
+                        onClick={handleAddTeamMember}
                         className="gradient-primary"
-                        disabled={!inviteEmail}
+                        disabled={!inviteName || !inviteEmail}
                       >
-                        <Mail className="h-4 w-4 mr-2" />
-                        Send Invitation
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Team Member
                       </Button>
                     </div>
                   </div>

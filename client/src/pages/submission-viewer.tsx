@@ -21,7 +21,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useLocation, useRoute } from "wouter";
 import { formTemplates } from "@/lib/formTemplates";
-import { mockClients } from "@/lib/mockData";
 import { useAuth } from "@/hooks/useAuth";
 
 interface FormSubmission {
@@ -166,11 +165,9 @@ export default function SubmissionViewerPage() {
   const getClient = () => {
     if (!submission) return null;
     
-    // Try to get client from mock data
-    const mockClient = mockClients.find(c => c.id === submission.clientId);
-    
-    // Fallback to default client if not found
-    return mockClient || {
+    // TODO: Replace with actual API call to fetch client data
+    // For now, return a default client structure
+    return {
       id: submission.clientId,
       name: 'Client User',
       email: 'client@example.com',

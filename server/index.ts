@@ -9,8 +9,8 @@ const app = express();
 app.use('/api/clerk/webhook', express.raw({ type: 'application/json' }));
 
 // Regular body parsers for other routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use((req, res, next) => {
   const start = Date.now();

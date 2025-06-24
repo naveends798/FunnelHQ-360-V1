@@ -44,7 +44,6 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { mockProjects } from "@/lib/mockData";
 
 // Types
 interface Task {
@@ -78,6 +77,14 @@ interface Task {
   };
 }
 
+interface Project {
+  id: number;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+}
+
 interface BoardColumn {
   id: string;
   title: string;
@@ -108,6 +115,7 @@ export default function TasksPage() {
     { id: "done", title: "Completed", status: "done", color: "bg-green-500/20 border-green-500/30", tasks: [] }
   ]);
   
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -120,14 +128,12 @@ export default function TasksPage() {
   const [isViewingDetails, setIsViewingDetails] = useState(false);
   const [isEditingTask, setIsEditingTask] = useState(false);
 
-  // Mock team members data
-  const teamMembers = [
-    { id: 1, name: "You", email: "you@company.com", avatar: "" },
-    { id: 2, name: "Jane Smith", email: "jane@company.com", avatar: "" },
-    { id: 3, name: "Mike Johnson", email: "mike@company.com", avatar: "" },
-    { id: 4, name: "Sarah Chen", email: "sarah@company.com", avatar: "" },
-    { id: 5, name: "Alex Rodriguez", email: "alex@company.com", avatar: "" }
-  ];
+  // Team members state
+  const [teamMembers, setTeamMembers] = useState([
+    { id: 1, name: "You", email: "you@company.com", avatar: "", role: "admin" }
+  ]);
+  const [currentUser, setCurrentUser] = useState({ id: 1, name: "You", role: "admin" });
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
   // New task form state
   const [newTask, setNewTask] = useState({
@@ -137,183 +143,67 @@ export default function TasksPage() {
     assignedTo: 1,
     estimatedHours: "",
     dueDate: "",
-    projectId: 1,
+    projectId: 1, // Will be auto-set from current project
     labels: [] as string[]
   });
 
   useEffect(() => {
     fetchTasks();
+    fetchTeamMembers();
+    fetchCurrentProject();
   }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      // TODO: Replace with actual API call to fetch team members
+      // For now, using mock data
+      const mockTeamMembers = [
+        { id: 1, name: "You", email: "admin@company.com", avatar: "", role: "admin" },
+        { id: 2, name: "John Developer", email: "john@company.com", avatar: "", role: "team_member" },
+        { id: 3, name: "Jane Designer", email: "jane@company.com", avatar: "", role: "team_member" },
+        { id: 4, name: "Mike Manager", email: "mike@company.com", avatar: "", role: "team_member" },
+      ];
+      setTeamMembers(mockTeamMembers);
+    } catch (error) {
+      console.error("Failed to fetch team members:", error);
+    }
+  };
+
+  const fetchCurrentProject = async () => {
+    try {
+      // TODO: Get current project from context or URL params
+      // For now, using mock data
+      const mockProject = {
+        id: 1,
+        title: "FunnelHQ 360 Project",
+        description: "Main project for FunnelHQ 360",
+        status: "active",
+        priority: "high"
+      };
+      setCurrentProject(mockProject);
+      setProjects([mockProject]);
+      
+      // Auto-set project in new task form
+      setNewTask(prev => ({ ...prev, projectId: mockProject.id }));
+    } catch (error) {
+      console.error("Failed to fetch current project:", error);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
       
-      // Mock data for demonstration - replace with actual API call
-      const mockTasks: Task[] = [
-        {
-          id: 1,
-          projectId: 1,
-          projectTitle: "E-commerce Redesign",
-          title: "Update homepage hero section",
-          description: "Redesign the hero section with new copy and imagery",
-          status: "todo",
-          priority: "high",
-          assignedTo: 1,
-          estimatedHours: "8",
-          dueDate: "2024-12-30",
-          position: 0,
-          labels: ["Frontend", "UI/UX"],
-          checklist: [
-            { id: "1", text: "Research competitor designs", completed: true },
-            { id: "2", text: "Create wireframes", completed: false },
-            { id: "3", text: "Implement design", completed: false }
-          ],
-          createdBy: 2,
-          createdAt: "2024-12-18",
-          updatedAt: "2024-12-18",
-          assignee: {
-            id: 1,
-            name: "You",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80"
-          },
-          assignedBy: {
-            id: 2,
-            name: "Sarah Chen",
-            role: "Project Manager"
-          }
-        },
-        {
-          id: 2,
-          projectId: 1,
-          projectTitle: "E-commerce Redesign",
-          title: "Implement shopping cart functionality",
-          description: "Add drag and drop functionality to the shopping cart",
-          status: "in_progress",
-          priority: "medium",
-          assignedTo: 1,
-          estimatedHours: "12",
-          dueDate: "2024-12-28",
-          position: 0,
-          labels: ["Backend", "API"],
-          checklist: [],
-          createdBy: 2,
-          createdAt: "2024-12-17",
-          updatedAt: "2024-12-18",
-          assignee: {
-            id: 1,
-            name: "You",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80"
-          },
-          assignedBy: {
-            id: 2,
-            name: "Alex Rodriguez",
-            role: "Tech Lead"
-          }
-        },
-        {
-          id: 3,
-          projectId: 2,
-          projectTitle: "Mobile App Development",
-          title: "Create user authentication flow",
-          description: "Design and implement login/signup screens",
-          status: "review",
-          priority: "urgent",
-          assignedTo: 1,
-          estimatedHours: "16",
-          dueDate: "2024-12-25",
-          position: 0,
-          labels: ["Mobile", "Authentication"],
-          checklist: [
-            { id: "1", text: "Design mockups", completed: true },
-            { id: "2", text: "Implement screens", completed: true },
-            { id: "3", text: "Add validation", completed: false }
-          ],
-          createdBy: 3,
-          createdAt: "2024-12-15",
-          updatedAt: "2024-12-18",
-          assignee: {
-            id: 1,
-            name: "You",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80"
-          },
-          assignedBy: {
-            id: 3,
-            name: "Mike Johnson",
-            role: "Product Manager"
-          }
-        },
-        {
-          id: 4,
-          projectId: 1,
-          projectTitle: "E-commerce Redesign",
-          title: "Setup payment gateway integration",
-          description: "Integrate Stripe payment processing",
-          status: "done",
-          priority: "high",
-          assignedTo: 1,
-          estimatedHours: "6",
-          dueDate: "2024-12-20",
-          completedAt: "2024-12-18",
-          position: 0,
-          labels: ["Backend", "Payments"],
-          checklist: [
-            { id: "1", text: "Setup Stripe account", completed: true },
-            { id: "2", text: "Implement API", completed: true },
-            { id: "3", text: "Test transactions", completed: true }
-          ],
-          createdBy: 2,
-          createdAt: "2024-12-10",
-          updatedAt: "2024-12-18",
-          assignee: {
-            id: 1,
-            name: "You",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80"
-          },
-          assignedBy: {
-            id: 2,
-            name: "Sarah Chen",
-            role: "Project Manager"
-          }
-        },
-        {
-          id: 5,
-          projectId: 3,
-          projectTitle: "Website Performance Optimization",
-          title: "Optimize image loading and caching",
-          description: "Implement lazy loading and optimize image compression",
-          status: "todo",
-          priority: "medium",
-          assignedTo: 1,
-          estimatedHours: "4",
-          dueDate: "2024-12-27",
-          position: 0,
-          labels: ["Performance", "Frontend"],
-          checklist: [
-            { id: "1", text: "Audit current images", completed: false },
-            { id: "2", text: "Implement lazy loading", completed: false },
-            { id: "3", text: "Setup caching strategy", completed: false }
-          ],
-          createdBy: 3,
-          createdAt: "2024-12-16",
-          updatedAt: "2024-12-16",
-          assignee: {
-            id: 1,
-            name: "You",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80"
-          },
-          assignedBy: {
-            id: 3,
-            name: "Emma Wilson",
-            role: "Client"
-          }
-        }
-      ];
+      // TODO: Replace with actual API calls to fetch tasks and projects
+      setProjects([]);
+      
+      // Start with empty data for production - replace with actual API call
+      const emptyTasks: Task[] = [];
 
       // Organize tasks by status
       const newColumns = columns.map(column => ({
         ...column,
-        tasks: mockTasks.filter(task => task.status === column.status)
+        tasks: emptyTasks.filter(task => task.status === column.status)
       }));
 
       setColumns(newColumns);
@@ -390,7 +280,7 @@ export default function TasksPage() {
 
     try {
       const assignee = teamMembers.find(member => member.id === newTask.assignedTo);
-      const selectedProject = mockProjects.find(p => p.id === newTask.projectId);
+      const selectedProject = projects.find(p => p.id === newTask.projectId);
       
       const updatedTask: Task = {
         ...selectedTask,
@@ -424,10 +314,10 @@ export default function TasksPage() {
         title: "",
         description: "",
         priority: "medium",
-        assignedTo: 1,
+        assignedTo: currentUser.id,
         estimatedHours: "",
         dueDate: "",
-        projectId: 1,
+        projectId: currentProject?.id || 1,
         labels: []
       });
       
@@ -478,7 +368,8 @@ export default function TasksPage() {
 
     try {
       const assignee = teamMembers.find(member => member.id === newTask.assignedTo);
-      const selectedProject = mockProjects.find(p => p.id === newTask.projectId);
+      const selectedProject = projects.find(p => p.id === newTask.projectId) || currentProject;
+      
       const task: Task = {
         id: Date.now(), // Mock ID generation
         projectId: newTask.projectId,
@@ -493,7 +384,7 @@ export default function TasksPage() {
         position: 0,
         labels: newTask.labels,
         checklist: [],
-        createdBy: 1,
+        createdBy: currentUser.id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         assignee: assignee ? {
@@ -502,34 +393,91 @@ export default function TasksPage() {
           avatar: assignee.avatar
         } : undefined,
         assignedBy: {
-          id: 1,
-          name: "You",
-          role: "Project Manager"
+          id: currentUser.id,
+          name: currentUser.name,
+          role: currentUser.role === "admin" ? "Admin" : "Project Manager"
         }
+      };
+
+      // Create task via API
+      const response = await fetch(`/api/projects/${newTask.projectId}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          assignedTo: newTask.assignedTo,
+          estimatedHours: newTask.estimatedHours ? parseFloat(newTask.estimatedHours) : null,
+          dueDate: newTask.dueDate ? new Date(newTask.dueDate) : null,
+          createdBy: currentUser.id,
+          status: 'todo',
+          position: 0,
+          labels: newTask.labels
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create task');
+      }
+
+      const createdTask = await response.json();
+
+      // Send notification if task is assigned to someone else
+      if (newTask.assignedTo !== currentUser.id && assignee) {
+        await sendTaskAssignmentNotification(createdTask, assignee);
+      }
+
+      // Update the task object with response data
+      const updatedTask = {
+        ...task,
+        id: createdTask.id,
+        createdAt: createdTask.createdAt,
+        updatedAt: createdTask.updatedAt
       };
 
       // Add task to the todo column
       setColumns(prev => prev.map(col => 
         col.id === "todo" 
-          ? { ...col, tasks: [task, ...col.tasks] }
+          ? { ...col, tasks: [updatedTask, ...col.tasks] }
           : col
       ));
 
-      // Reset form
+      // Reset form but keep project selection
       setNewTask({
         title: "",
         description: "",
         priority: "medium",
-        assignedTo: 1,
+        assignedTo: currentUser.id, // Default to assigning to admin/current user
         estimatedHours: "",
         dueDate: "",
-        projectId: 1,
+        projectId: currentProject?.id || 1,
         labels: []
       });
       
       setIsCreatingTask(false);
     } catch (error) {
       console.error("Failed to create task:", error);
+    }
+  };
+
+  const sendTaskAssignmentNotification = async (task: Task, assignee: any) => {
+    try {
+      // Use the dedicated task assignment endpoint
+      await fetch(`/api/tasks/${task.id}/assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          assignedTo: assignee.id,
+          assignedBy: currentUser.id
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send task assignment notification:', error);
     }
   };
 
@@ -713,15 +661,14 @@ export default function TasksPage() {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="text-white hover:bg-white/10 border border-white/20 rounded-xl"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-white hover:bg-white/10 border border-white/20 rounded-xl"
+                onClick={() => window.history.back()}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
               <div>
                 <h1 className="text-3xl font-bold text-white">My Tasks</h1>
                 <p className="text-slate-400">Tasks assigned to you across all projects</p>
@@ -779,7 +726,7 @@ export default function TasksPage() {
                 </SelectTrigger>
                 <SelectContent className="glass border-white/10">
                   <SelectItem value="all">All projects</SelectItem>
-                  {mockProjects.map((project) => (
+                  {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id.toString()}>
                       {project.title}
                     </SelectItem>
@@ -845,7 +792,9 @@ export default function TasksPage() {
           <DialogHeader>
             <DialogTitle className="text-white">Create New Task</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Add a new task and assign it to a team member.
+              {currentUser.role === "admin" 
+                ? "Add a new task and assign it to any team member." 
+                : "Add a new task for yourself."}
             </DialogDescription>
           </DialogHeader>
           
@@ -920,42 +869,58 @@ export default function TasksPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="glass border-white/10">
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback className="text-xs bg-white/10 text-white">
-                              {member.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{member.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {currentUser.role === "admin" ? (
+                      // Admin sees all team members including themselves
+                      teamMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={member.avatar} />
+                              <AvatarFallback className="text-xs bg-white/10 text-white">
+                                {member.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.name} {member.id === currentUser.id ? "(You)" : ""}</span>
+                            {member.role === "admin" && <Badge className="text-xs bg-purple-500/20 text-purple-300">Admin</Badge>}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      // Non-admin users only see themselves
+                      teamMembers.filter(member => member.id === currentUser.id).map((member) => (
+                        <SelectItem key={member.id} value={member.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={member.avatar} />
+                              <AvatarFallback className="text-xs bg-white/10 text-white">
+                                {member.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.name} (You)</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label htmlFor="project" className="text-white">Project</Label>
-                <Select 
-                  value={newTask.projectId.toString()} 
-                  onValueChange={(value) => 
-                    setNewTask(prev => ({ ...prev, projectId: parseInt(value) }))
-                  }
-                >
-                  <SelectTrigger className="glass border-white/10 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="glass border-white/10">
-                    {mockProjects.map((project) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="glass border-white/10 text-white p-3 rounded-lg bg-white/5">
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-4 w-4 text-slate-400" />
+                    <span className="text-white font-medium">
+                      {currentProject?.title || "FunnelHQ 360 Project"}
+                    </span>
+                    <Badge className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
+                      Current Project
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Tasks will be assigned to this project
+                  </p>
+                </div>
               </div>
             </div>
             
@@ -1196,7 +1161,7 @@ export default function TasksPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="glass border-white/10">
-                    {mockProjects.map((project) => (
+                    {projects.map((project) => (
                       <SelectItem key={project.id} value={project.id.toString()}>
                         {project.title}
                       </SelectItem>

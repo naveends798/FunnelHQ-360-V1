@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CreateClientModal from "@/components/create-client-modal";
+import EditClientModal from "@/components/edit-client-modal";
 import { 
   Search, 
   Plus, 
@@ -31,6 +32,8 @@ import { type Client } from "@shared/schema";
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateClient, setShowCreateClient] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -38,6 +41,11 @@ export default function ClientsPage() {
   const { data: clients, isLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
+
+  const handleEditClient = (client: Client) => {
+    setClientToEdit(client);
+    setShowEditClient(true);
+  };
 
   const handleDeleteClient = async (client: Client) => {
     setIsDeleting(true);
@@ -165,11 +173,14 @@ export default function ClientsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className="glass-dark border-white/10 hover:border-white/20 transition-all cursor-pointer group">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center space-x-3">
+                    <Card 
+                      className="glass-dark border-white/10 hover:border-white/20 transition-all cursor-pointer group h-auto min-h-[200px]"
+                      onClick={() => handleEditClient(client)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start space-x-3">
                           {client.avatar ? (
-                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20">
+                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/20 flex-shrink-0">
                               <img 
                                 src={client.avatar} 
                                 alt={`${client.name} avatar`} 
@@ -177,47 +188,55 @@ export default function ClientsPage() {
                               />
                             </div>
                           ) : (
-                            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
                               {client.name.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <div className="flex-1">
-                            <CardTitle className="text-white text-lg group-hover:text-purple-300 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-white text-base font-semibold group-hover:text-purple-300 transition-colors truncate">
                               {client.name}
                             </CardTitle>
-                            <CardDescription className="text-slate-400 flex items-center">
-                              <Mail className="h-3 w-3 mr-1" />
-                              {client.email}
+                            <CardDescription className="text-slate-400 flex items-center text-sm mt-1">
+                              <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                              <span className="truncate">{client.email}</span>
                             </CardDescription>
                           </div>
                         </div>
                       </CardHeader>
                       
-                      <CardContent className="pt-0">
+                      <CardContent className="pt-0 pb-4">
                         {client.notes && (
-                          <p className="text-slate-300 text-sm mb-4 line-clamp-2">
-                            {client.notes}
-                          </p>
+                          <div className="mb-4">
+                            <p className="text-slate-300 text-sm leading-relaxed line-clamp-3 break-words">
+                              {client.notes}
+                            </p>
+                          </div>
                         )}
                         
-                        <div className="flex items-center justify-between text-xs text-slate-500">
+                        <div className="flex items-center justify-between text-xs text-slate-500 mt-auto">
                           <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Joined {new Date(client.joinedAt).toLocaleDateString()}
+                            <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">
+                              Joined {new Date(client.joinedAt).toLocaleDateString()}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 ml-2">
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 px-2 text-slate-400 hover:text-white"
+                              className="h-7 px-2 text-slate-400 hover:text-white hover:bg-white/10"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <MessageCircle className="h-3 w-3" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 px-2 text-slate-400 hover:text-red-400"
-                              onClick={() => setClientToDelete(client)}
+                              className="h-7 px-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setClientToDelete(client);
+                              }}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -236,6 +255,12 @@ export default function ClientsPage() {
       <CreateClientModal 
         open={showCreateClient} 
         onOpenChange={setShowCreateClient} 
+      />
+
+      <EditClientModal 
+        open={showEditClient} 
+        onOpenChange={setShowEditClient}
+        client={clientToEdit}
       />
 
       {/* Delete Confirmation Dialog */}

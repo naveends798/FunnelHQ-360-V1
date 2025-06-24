@@ -28,24 +28,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, X, Plus, Users, DollarSign, Search, AlertTriangle } from "lucide-react";
+import { CalendarIcon, X, Plus, Users, DollarSign, Search, AlertTriangle, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { type Client, BILLING_PLANS, type BillingPlan } from "@shared/schema";
 import CreateClientModal from "@/components/create-client-modal";
 import { useAuth } from "@/hooks/useAuth";
+import { useTeam } from "@/hooks/useTeam";
 
 interface CreateProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-
-const mockTeamMembers = [
-  { id: 1, name: "Alex Rodriguez", role: "Developer", avatar: "/avatars/alex.jpg" },
-  { id: 2, name: "Sarah Kim", role: "Designer", avatar: "/avatars/sarah.jpg" },
-  { id: 3, name: "John Doe", role: "Project Manager", avatar: "/avatars/john.jpg" },
-  { id: 4, name: "Lisa Zhang", role: "QA Engineer", avatar: "/avatars/lisa.jpg" },
-];
 
 export default function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -55,6 +48,11 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
   const [showCreateClient, setShowCreateClient] = useState(false);
   const { authUser, isTeamMember } = useAuth();
   const testPlan = 'pro' as BillingPlan;
+  
+  // Get team members from the team hook
+  const { teamMembers: allTeamMembers, loading: teamLoading } = useTeam({
+    organizationId: authUser?.organizationId || 1
+  });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -65,11 +63,23 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     endDate: undefined as Date | undefined,
     teamMembers: [] as number[],
     tags: [] as string[],
+    onboardingFormId: "",
   });
   const [newTag, setNewTag] = useState("");
 
   const { data: clients, isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+  });
+
+  // Fetch onboarding forms for selection
+  const { data: onboardingForms, isLoading: formsLoading } = useQuery({
+    queryKey: ["/api/onboarding-forms", { organizationId: authUser?.organizationId || 1 }],
+    queryFn: async () => {
+      const response = await fetch(`/api/onboarding-forms?organizationId=${authUser?.organizationId || 1}`);
+      if (!response.ok) throw new Error('Failed to fetch onboarding forms');
+      return response.json();
+    },
+    enabled: !!authUser?.organizationId
   });
 
   // Fetch organization billing data to check project limits
@@ -185,8 +195,9 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         status: "active",
         progress: null, // Auto-calculate progress from tasks
         tags: formData.tags,
-        teamMembers: formData.teamMembers.map(id => mockTeamMembers.find(member => member.id === id)?.name || `User ${id}`),
-        endDate: formData.endDate ? formData.endDate.toISOString() : null // Auto-calculate from task due dates if not set
+        teamMembers: formData.teamMembers.map(id => allTeamMembers.find(member => member.id === id)?.name || `User ${id}`),
+        endDate: formData.endDate ? formData.endDate.toISOString() : null, // Auto-calculate from task due dates if not set
+        onboardingFormId: formData.onboardingFormId ? parseInt(formData.onboardingFormId) : null
       };
 
       console.log("Sending project data:", projectData);
@@ -218,6 +229,71 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
       const project = JSON.parse(responseText);
       console.log("Project created:", project);
+
+      // Send email notifications to client and team members
+      try {
+        const selectedClient = clients?.find(c => c.id === parseInt(formData.clientId));
+        const selectedTeamMembers = allTeamMembers.filter(member => 
+          formData.teamMembers.includes(member.id)
+        );
+
+        // Send email to client about project assignment
+        if (selectedClient) {
+          console.log("Sending client project assignment email...");
+          const clientEmailResponse = await fetch("/api/email/client-project-assignment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              clientEmail: selectedClient.email,
+              clientName: selectedClient.name,
+              projectTitle: formData.title,
+              projectId: project.id,
+              companyName: "FunnelHQ 360",
+              loginUrl: `${window.location.origin}/client-portal`,
+            }),
+          });
+
+          if (clientEmailResponse.ok) {
+            console.log("✅ Client notification email sent successfully");
+          } else {
+            console.warn("⚠️ Failed to send client notification email");
+          }
+        }
+
+        // Send email notifications to assigned team members
+        for (const teamMember of selectedTeamMembers) {
+          console.log(`Sending team member notification to ${teamMember.email}...`);
+          try {
+            const teamEmailResponse = await fetch("/api/email/team-project-assignment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                memberEmail: teamMember.email,
+                memberName: teamMember.name,
+                projectTitle: formData.title,
+                projectId: project.id,
+                clientName: selectedClient?.name || "Client",
+                loginUrl: `${window.location.origin}/projects/${project.id}`,
+              }),
+            });
+
+            if (teamEmailResponse.ok) {
+              console.log(`✅ Team member notification sent to ${teamMember.email}`);
+            } else {
+              console.warn(`⚠️ Failed to send notification to ${teamMember.email}`);
+            }
+          } catch (error) {
+            console.warn(`⚠️ Error sending notification to ${teamMember.email}:`, error);
+          }
+        }
+      } catch (error) {
+        console.warn("⚠️ Error sending notification emails:", error);
+        // Don't block project creation if email fails
+      }
       
       // Close modal and reset form
       onOpenChange(false);
@@ -232,6 +308,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         endDate: undefined,
         teamMembers: [],
         tags: [],
+        onboardingFormId: "",
       });
       setClientSearchTerm("");
       
@@ -504,30 +581,92 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                     Add Member
                   </Button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                  {mockTeamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      onClick={() => toggleTeamMember(member.id)}
-                      className={cn(
-                        "p-3 rounded-lg border cursor-pointer transition-all",
-                        formData.teamMembers.includes(member.id)
-                          ? "border-primary bg-primary/20"
-                          : "border-white/20 bg-white/5 hover:bg-white/10"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-medium">
-                          {member.name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <div>
-                          <div className="text-white font-medium">{member.name}</div>
-                          <div className="text-slate-400 text-sm">{member.role}</div>
+                {teamLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="ml-2 text-slate-400">Loading team members...</span>
+                  </div>
+                ) : allTeamMembers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-8 w-8 text-slate-600 mx-auto mb-2" />
+                    <p className="text-slate-400 text-sm">No team members available</p>
+                    <p className="text-slate-500 text-xs mt-1">Add team members first in the Team Management page</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                    {allTeamMembers.map((member) => (
+                      <div
+                        key={member.id}
+                        onClick={() => toggleTeamMember(member.id)}
+                        className={cn(
+                          "p-3 rounded-lg border cursor-pointer transition-all",
+                          formData.teamMembers.includes(member.id)
+                            ? "border-primary bg-primary/20"
+                            : "border-white/20 bg-white/5 hover:bg-white/10"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          {member.avatar ? (
+                            <img
+                              src={member.avatar}
+                              alt={member.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-medium">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-white font-medium">{member.name}</div>
+                            <div className="text-slate-400 text-sm">{member.role}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Onboarding Form Assignment */}
+              <div>
+                <Label className="text-white flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Assign Onboarding Form (Optional)
+                </Label>
+                <p className="text-slate-400 text-sm mb-3">
+                  Assign an onboarding form that clients will have access to for this project
+                </p>
+                <Select value={formData.onboardingFormId} onValueChange={(value) => setFormData(prev => ({ ...prev, onboardingFormId: value }))}>
+                  <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                    <SelectValue placeholder="Choose an onboarding form" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formsLoading ? (
+                      <SelectItem value="loading" disabled>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                          Loading forms...
+                        </div>
+                      </SelectItem>
+                    ) : !onboardingForms || onboardingForms.length === 0 ? (
+                      <SelectItem value="no-forms" disabled>
+                        <div className="text-slate-500">
+                          No onboarding forms available. Create one first.
+                        </div>
+                      </SelectItem>
+                    ) : (
+                      onboardingForms.map((form: any) => (
+                        <SelectItem key={form.id} value={form.id.toString()}>
+                          <div className="flex flex-col">
+                            <div className="font-medium">{form.title}</div>
+                            <div className="text-sm text-slate-500">{form.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

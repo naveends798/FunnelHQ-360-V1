@@ -38,7 +38,15 @@ import {
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { formTemplates, FormTemplate } from "@/lib/formTemplates";
-import { mockClients } from "@/lib/mockData";
+
+interface Client {
+  id: number;
+  name: string;
+  company: string;
+  email: string;
+  avatar: string;
+  status: string;
+}
 
 interface FormAssignment {
   id: number;
@@ -52,18 +60,11 @@ interface FormAssignment {
   customInstructions?: string;
 }
 
-interface Client {
-  id: number;
-  name: string;
-  company: string;
-  email: string;
-  avatar: string;
-  status: string;
-}
 
 export default function AdminOnboardingPage() {
   const [location, setLocation] = useLocation();
   const [assignments, setAssignments] = useState<FormAssignment[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
@@ -73,39 +74,11 @@ export default function AdminOnboardingPage() {
   const [customInstructions, setCustomInstructions] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  // Mock assignments data
+  // Initialize empty data - real data would come from API calls
   useEffect(() => {
-    const mockAssignments: FormAssignment[] = [
-      {
-        id: 1,
-        formTemplateId: "project-brief",
-        clientId: 1,
-        status: "completed",
-        assignedAt: "2024-12-15T10:00:00Z",
-        dueDate: "2024-12-20T23:59:59Z",
-        completedAt: "2024-12-18T14:30:00Z",
-        customInstructions: "Please focus on the technical requirements section."
-      },
-      {
-        id: 2,
-        formTemplateId: "brand-questionnaire",
-        clientId: 2,
-        status: "pending",
-        assignedAt: "2024-12-16T09:00:00Z",
-        dueDate: "2024-12-22T23:59:59Z",
-        customInstructions: "This is for the rebranding project we discussed."
-      },
-      {
-        id: 3,
-        formTemplateId: "website-requirements",
-        clientId: 3,
-        status: "overdue",
-        assignedAt: "2024-12-10T15:00:00Z",
-        dueDate: "2024-12-17T23:59:59Z",
-        customInstructions: "Urgent: Need this completed for Monday's meeting."
-      }
-    ];
-    setAssignments(mockAssignments);
+    // TODO: Replace with actual API calls to fetch assignments and clients
+    setAssignments([]);
+    setClients([]);
   }, []);
 
   const handleAssignForm = () => {
@@ -132,7 +105,7 @@ export default function AdminOnboardingPage() {
   };
 
   const getAssignmentClient = (clientId: number) => {
-    return mockClients.find(client => client.id === clientId);
+    return clients.find(client => client.id === clientId);
   };
 
   const getAssignmentTemplate = (templateId: string) => {
@@ -510,15 +483,15 @@ export default function AdminOnboardingPage() {
               <Select 
                 value={selectedClient?.id.toString() || ""} 
                 onValueChange={(value) => {
-                  const client = mockClients.find(c => c.id === parseInt(value));
+                  const client = clients.find(c => c.id === parseInt(value));
                   setSelectedClient(client || null);
                 }}
               >
                 <SelectTrigger className="glass border-white/10 text-white">
-                  <SelectValue placeholder="Choose a client" />
+                  <SelectValue placeholder={clients.length === 0 ? "No clients available" : "Choose a client"} />
                 </SelectTrigger>
                 <SelectContent className="glass border-white/10">
-                  {mockClients.map((client) => (
+                  {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id.toString()}>
                       <div className="flex items-center space-x-2">
                         <div className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-semibold">

@@ -196,12 +196,11 @@ export function SidebarPlanInfo({
             <div className="mt-3">
               <Link href="/billing">
                 <Button 
-                  variant="outline" 
                   size="sm" 
-                  className="w-full text-xs h-7 bg-gradient-to-r from-purple-500/10 to-purple-600/10 border-purple-500/30 text-purple-300 hover:from-purple-500/20 hover:to-purple-600/20 transition-all hover:scale-[1.02]"
+                  className="w-full text-xs h-8 bg-gradient-to-r from-purple-500 via-purple-600 to-blue-600 hover:from-purple-600 hover:via-purple-700 hover:to-blue-700 text-white border-none font-medium transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
-                  Upgrade to Pro
+                  Upgrade
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </Link>

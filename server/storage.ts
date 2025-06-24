@@ -28,6 +28,16 @@ import {
   BILLING_PLANS
 } from "@shared/schema";
 
+// Local types not in schema
+interface UserRole {
+  id: number;
+  userId: number;
+  organizationId: number;
+  role: string;
+  permissions: string[];
+  createdAt: Date;
+}
+
 export interface IStorage {
   // Users
   getUsers(): Promise<User[]>;
@@ -264,225 +274,14 @@ export class MemStorage implements IStorage {
     };
     this.organizations.set(sampleOrganization.id, sampleOrganization);
 
-    // Create sample clients
-    const techFlowClient: Client = {
-      id: this.currentClientId++,
-      name: "Sarah Chen",
-      email: "sarah@techflow.com",
-      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80",
-      notes: "CEO of TechFlow Solutions. Leading digital transformation initiatives for enterprise clients. Prefers weekly progress updates.",
-      organizationId: 1,
-      joinedAt: new Date("2023-01-15")
-    };
+    // No sample clients - start with empty state for production
 
-    const dataVizClient: Client = {
-      id: this.currentClientId++,
-      name: "Michael Rodriguez",
-      email: "michael@dataviz.com",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80",
-      notes: "CTO at DataViz Inc. Focused on transforming complex data into actionable insights. Highly technical and detail-oriented.",
-      organizationId: 1,
-      joinedAt: new Date("2023-03-20")
-    };
+    // No sample projects - start with empty state for production
 
-    const payFlowClient: Client = {
-      id: this.currentClientId++,
-      name: "Emma Thompson",
-      email: "emma@payflow.io",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60&q=80",
-      notes: "Product Manager at PayFlow Systems. Building the future of financial technology. Values innovation and user experience.",
-      organizationId: 1,
-      joinedAt: new Date("2023-05-10")
-    };
+    // No sample activities - start with empty state for production
 
-    this.clients.set(techFlowClient.id, techFlowClient);
-    this.clients.set(dataVizClient.id, dataVizClient);
-    this.clients.set(payFlowClient.id, payFlowClient);
+    // No sample notifications - start with empty state for production
 
-    // Create sample projects
-    const ecommerceProject: Project = {
-      id: this.currentProjectId++,
-      title: "E-commerce Platform",
-      description: "Complete redesign and development of modern e-commerce platform with advanced analytics",
-      clientId: techFlowClient.id,
-      organizationId: 1,
-      status: "active",
-      progress: 75,
-      budget: "18000.00",
-      budgetUsed: "12400.00",
-      startDate: new Date("2024-10-15"),
-      endDate: new Date("2024-12-15"),
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
-      priority: "high",
-      teamMembers: ["alex", "sarah", "mike", "jenny", "david"],
-      tags: ["e-commerce", "react", "node.js", "mongodb"],
-      createdBy: 1,
-      createdAt: new Date("2024-10-15"),
-      updatedAt: new Date("2024-12-15")
-    };
-
-    const dashboardProject: Project = {
-      id: this.currentProjectId++,
-      title: "Analytics Dashboard",
-      description: "Interactive data visualization dashboard with real-time analytics and reporting",
-      clientId: dataVizClient.id,
-      organizationId: 1,
-      status: "active",
-      progress: 62,
-      budget: "14000.00",
-      budgetUsed: "8200.00",
-      startDate: new Date("2024-11-02"),
-      endDate: new Date("2025-01-30"),
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
-      priority: "medium",
-      teamMembers: ["alex", "sarah", "tom"],
-      tags: ["dashboard", "analytics", "d3.js", "python"],
-      createdBy: 1,
-      createdAt: new Date("2024-11-02"),
-      updatedAt: new Date("2024-11-02")
-    };
-
-    const mobileAppProject: Project = {
-      id: this.currentProjectId++,
-      title: "FinTech Mobile App",
-      description: "Cross-platform mobile application for financial services with advanced security features",
-      clientId: payFlowClient.id,
-      organizationId: 1,
-      status: "active",
-      progress: 35,
-      budget: "22000.00",
-      budgetUsed: "4800.00",
-      startDate: new Date("2024-10-28"),
-      endDate: new Date("2025-03-15"),
-      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
-      priority: "high",
-      teamMembers: ["alex", "sarah", "mike", "jenny", "david", "lisa"],
-      tags: ["mobile", "react-native", "fintech", "security"],
-      createdBy: 1,
-      createdAt: new Date("2024-10-28"),
-      updatedAt: new Date("2024-10-28")
-    };
-
-    this.projects.set(ecommerceProject.id, ecommerceProject);
-    this.projects.set(dashboardProject.id, dashboardProject);
-    this.projects.set(mobileAppProject.id, mobileAppProject);
-
-    // Create sample activities
-    const activities: Activity[] = [
-      {
-        id: this.currentActivityId++,
-        type: "milestone_completed",
-        title: "Project milestone completed",
-        description: "Payment gateway integration milestone completed successfully",
-        projectId: ecommerceProject.id,
-        clientId: techFlowClient.id,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        metadata: { milestone: "Payment Integration" }
-      },
-      {
-        id: this.currentActivityId++,
-        type: "message_received",
-        title: "New client message",
-        description: "Client has sent feedback on the latest design mockups",
-        projectId: ecommerceProject.id,
-        clientId: techFlowClient.id,
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-        metadata: { subject: "Design Feedback" }
-      },
-      {
-        id: this.currentActivityId++,
-        type: "document_uploaded",
-        title: "Document uploaded",
-        description: "New wireframes and user flow documentation uploaded",
-        projectId: dashboardProject.id,
-        clientId: dataVizClient.id,
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-        metadata: { document: "wireframes_v2.pdf" }
-      },
-      {
-        id: this.currentActivityId++,
-        type: "payment_received",
-        title: "Payment received",
-        description: "Monthly retainer payment processed successfully",
-        projectId: dashboardProject.id,
-        clientId: dataVizClient.id,
-        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
-        metadata: { amount: 5000, currency: "USD" }
-      }
-    ];
-
-    activities.forEach(activity => this.activities.set(activity.id, activity));
-
-    // Create sample notifications
-    const sampleNotifications: Notification[] = [
-      {
-        id: this.currentNotificationId++,
-        userId: 1,
-        organizationId: 1,
-        type: "comment",
-        title: "New comment on Project Alpha",
-        message: "Sarah Johnson commented on your project milestone",
-        data: { projectId: 1, commentId: 123 },
-        isRead: false,
-        actionUrl: "/projects/1#comment-123",
-        createdAt: new Date(Date.now() - 300000), // 5 minutes ago
-        readAt: null
-      },
-      {
-        id: this.currentNotificationId++,
-        userId: 1,
-        organizationId: 1,
-        type: "mention",
-        title: "You were mentioned",
-        message: "Alex Chen mentioned you in a project discussion",
-        data: { projectId: 2, commentId: 124 },
-        isRead: false,
-        actionUrl: "/projects/2#comment-124",
-        createdAt: new Date(Date.now() - 1800000), // 30 minutes ago
-        readAt: null
-      },
-      {
-        id: this.currentNotificationId++,
-        userId: 1,
-        organizationId: 1,
-        type: "project_update",
-        title: "Project milestone completed",
-        message: "Website redesign project reached 75% completion",
-        data: { projectId: 3, milestoneId: 5 },
-        isRead: true,
-        actionUrl: "/projects/3",
-        createdAt: new Date(Date.now() - 3600000), // 1 hour ago
-        readAt: new Date(Date.now() - 1800000)
-      },
-      {
-        id: this.currentNotificationId++,
-        userId: 1,
-        organizationId: 1,
-        type: "form_submission",
-        title: "New client onboarding",
-        message: "TechCorp submitted their onboarding form",
-        data: { formId: 2, submissionId: 15 },
-        isRead: true,
-        actionUrl: "/admin/forms/2/submissions/15",
-        createdAt: new Date(Date.now() - 7200000), // 2 hours ago
-        readAt: new Date(Date.now() - 3600000)
-      },
-      {
-        id: this.currentNotificationId++,
-        userId: 1,
-        organizationId: 1,
-        type: "billing",
-        title: "Payment received",
-        message: "Invoice #1234 has been paid - $2,500.00",
-        data: { invoiceId: 1234, amount: 2500 },
-        isRead: false,
-        actionUrl: "/billing/invoices/1234",
-        createdAt: new Date(Date.now() - 14400000), // 4 hours ago
-        readAt: null
-      }
-    ];
-
-    sampleNotifications.forEach(notification => this.notifications.set(notification.id, notification));
 
     // Create sample users and roles
     const sampleUsers: User[] = [
@@ -556,94 +355,7 @@ export class MemStorage implements IStorage {
 
     sampleUserRoles.forEach(role => this.userRoles.set(role.id, role));
 
-    // Create sample project team member assignments
-    const sampleProjectTeamMembers: ProjectTeamMember[] = [
-      // E-commerce Project team
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 1, // E-commerce Platform
-        userId: 1, // Alex Thompson
-        role: "project_manager",
-        permissions: ["project:view", "project:update", "project:manage_tasks", "project:assign_members"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-15"),
-        isActive: true
-      },
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 1,
-        userId: 2, // Sarah Johnson
-        role: "developer",
-        permissions: ["project:view", "project:manage_tasks", "project:upload_documents"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-15"),
-        isActive: true
-      },
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 1,
-        userId: 3, // Mike Chen
-        role: "designer",
-        permissions: ["project:view", "project:manage_tasks", "project:manage_designs"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-16"),
-        isActive: true
-      },
-      // Analytics Dashboard team
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 2, // Analytics Dashboard
-        userId: 1, // Alex Thompson
-        role: "project_manager",
-        permissions: ["project:view", "project:update", "project:manage_tasks", "project:assign_members"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-11-02"),
-        isActive: true
-      },
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 2,
-        userId: 2, // Sarah Johnson
-        role: "developer",
-        permissions: ["project:view", "project:manage_tasks", "project:upload_documents"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-11-02"),
-        isActive: true
-      },
-      // FinTech Mobile App team
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 3, // FinTech Mobile App
-        userId: 1, // Alex Thompson
-        role: "project_manager",
-        permissions: ["project:view", "project:update", "project:manage_tasks", "project:assign_members"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-28"),
-        isActive: true
-      },
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 3,
-        userId: 2, // Sarah Johnson
-        role: "developer",
-        permissions: ["project:view", "project:manage_tasks", "project:upload_documents"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-28"),
-        isActive: true
-      },
-      {
-        id: this.currentProjectTeamMemberId++,
-        projectId: 3,
-        userId: 3, // Mike Chen
-        role: "developer",
-        permissions: ["project:view", "project:manage_tasks", "project:upload_documents"],
-        assignedBy: 1,
-        assignedAt: new Date("2024-10-29"),
-        isActive: true
-      }
-    ];
-
-    sampleProjectTeamMembers.forEach(member => this.projectTeamMembers.set(member.id, member));
+    // No sample project team members - start with empty state for production
 
     // Create sample team invitations
     const sampleInvitations: TeamInvitation[] = [
@@ -1228,355 +940,7 @@ export class MemStorage implements IStorage {
 
     sampleAssets.forEach(asset => this.assets.set(asset.id, asset));
 
-    // Create sample project tasks
-    const sampleProjectTasks: ProjectTask[] = [
-      // E-commerce Platform Tasks (Project 1)
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Setup project structure and dependencies",
-        description: "Initialize React project with TypeScript, setup ESLint, Prettier, and testing framework",
-        status: "done",
-        priority: "high",
-        assignedTo: 1,
-        estimatedHours: "8.0",
-        actualHours: "7.5",
-        dueDate: new Date("2024-10-20"),
-        completedAt: new Date("2024-10-19T16:30:00Z"),
-        position: 0,
-        labels: ["frontend", "setup"],
-        checklist: [
-          { id: "1", text: "Initialize React TypeScript project", completed: true },
-          { id: "2", text: "Setup ESLint and Prettier", completed: true },
-          { id: "3", text: "Configure testing framework", completed: true },
-          { id: "4", text: "Setup CI/CD pipeline", completed: true }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T09:00:00Z"),
-        updatedAt: new Date("2024-10-19T16:30:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Design homepage layout and components",
-        description: "Create responsive homepage design with hero section, featured products, and call-to-action areas",
-        status: "done",
-        priority: "high",
-        assignedTo: 2,
-        estimatedHours: "12.0",
-        actualHours: "14.0",
-        dueDate: new Date("2024-10-25"),
-        completedAt: new Date("2024-10-24T18:00:00Z"),
-        position: 1,
-        labels: ["design", "frontend", "homepage"],
-        checklist: [
-          { id: "1", text: "Create wireframes", completed: true },
-          { id: "2", text: "Design hero section", completed: true },
-          { id: "3", text: "Design product showcase", completed: true },
-          { id: "4", text: "Mobile responsiveness", completed: true }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T09:15:00Z"),
-        updatedAt: new Date("2024-10-24T18:00:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Implement user authentication system",
-        description: "Build secure login/registration with JWT tokens, password reset, and email verification",
-        status: "in_progress",
-        priority: "high",
-        assignedTo: 1,
-        estimatedHours: "16.0",
-        actualHours: "10.5",
-        dueDate: new Date("2024-11-01"),
-        completedAt: null,
-        position: 2,
-        labels: ["backend", "auth", "security"],
-        checklist: [
-          { id: "1", text: "Setup JWT authentication", completed: true },
-          { id: "2", text: "Implement login/registration", completed: true },
-          { id: "3", text: "Add password reset functionality", completed: false },
-          { id: "4", text: "Email verification system", completed: false },
-          { id: "5", text: "Two-factor authentication", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T09:30:00Z"),
-        updatedAt: new Date("2024-10-30T14:20:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Product catalog and search functionality",
-        description: "Implement product listing, filtering, sorting, and search with pagination",
-        status: "review",
-        priority: "medium",
-        assignedTo: 2,
-        estimatedHours: "20.0",
-        actualHours: "18.0",
-        dueDate: new Date("2024-11-05"),
-        completedAt: null,
-        position: 3,
-        labels: ["frontend", "products", "search"],
-        checklist: [
-          { id: "1", text: "Product listing component", completed: true },
-          { id: "2", text: "Search functionality", completed: true },
-          { id: "3", text: "Filtering and sorting", completed: true },
-          { id: "4", text: "Pagination", completed: true },
-          { id: "5", text: "Performance optimization", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T09:45:00Z"),
-        updatedAt: new Date("2024-11-03T16:15:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Shopping cart and checkout flow",
-        description: "Build complete shopping cart with add/remove items, quantity updates, and secure checkout process",
-        status: "todo",
-        priority: "high",
-        assignedTo: 1,
-        estimatedHours: "24.0",
-        actualHours: null,
-        dueDate: new Date("2024-11-15"),
-        completedAt: null,
-        position: 4,
-        labels: ["frontend", "cart", "checkout", "payments"],
-        checklist: [
-          { id: "1", text: "Shopping cart component", completed: false },
-          { id: "2", text: "Add/remove items functionality", completed: false },
-          { id: "3", text: "Checkout form design", completed: false },
-          { id: "4", text: "Payment integration", completed: false },
-          { id: "5", text: "Order confirmation", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T10:00:00Z"),
-        updatedAt: new Date("2024-10-15T10:00:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 1,
-        title: "Admin dashboard for inventory management",
-        description: "Create admin interface for managing products, orders, and inventory levels",
-        status: "todo",
-        priority: "medium",
-        assignedTo: null,
-        estimatedHours: "32.0",
-        actualHours: null,
-        dueDate: new Date("2024-12-01"),
-        completedAt: null,
-        position: 5,
-        labels: ["admin", "backend", "inventory"],
-        checklist: [
-          { id: "1", text: "Product management interface", completed: false },
-          { id: "2", text: "Order management system", completed: false },
-          { id: "3", text: "Inventory tracking", completed: false },
-          { id: "4", text: "Analytics dashboard", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-15T10:15:00Z"),
-        updatedAt: new Date("2024-10-15T10:15:00Z")
-      },
-
-      // Analytics Dashboard Tasks (Project 2)
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 2,
-        title: "Setup data visualization framework",
-        description: "Choose and configure charting library (D3.js/Chart.js) for interactive data visualizations",
-        status: "done",
-        priority: "high",
-        assignedTo: 3,
-        estimatedHours: "6.0",
-        actualHours: "5.5",
-        dueDate: new Date("2024-11-05"),
-        completedAt: new Date("2024-11-04T15:20:00Z"),
-        position: 0,
-        labels: ["frontend", "charts", "d3js"],
-        checklist: [
-          { id: "1", text: "Research charting libraries", completed: true },
-          { id: "2", text: "Setup D3.js", completed: true },
-          { id: "3", text: "Create base chart components", completed: true }
-        ],
-        createdBy: 2,
-        createdAt: new Date("2024-11-02T08:30:00Z"),
-        updatedAt: new Date("2024-11-04T15:20:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 2,
-        title: "Implement real-time data connection",
-        description: "Setup WebSocket connection for live data updates and real-time chart refreshing",
-        status: "in_progress",
-        priority: "high",
-        assignedTo: 1,
-        estimatedHours: "14.0",
-        actualHours: "8.0",
-        dueDate: new Date("2024-11-12"),
-        completedAt: null,
-        position: 1,
-        labels: ["backend", "websocket", "realtime"],
-        checklist: [
-          { id: "1", text: "Setup WebSocket server", completed: true },
-          { id: "2", text: "Implement data streaming", completed: true },
-          { id: "3", text: "Client-side real-time updates", completed: false },
-          { id: "4", text: "Error handling and reconnection", completed: false }
-        ],
-        createdBy: 2,
-        createdAt: new Date("2024-11-02T08:45:00Z"),
-        updatedAt: new Date("2024-11-10T16:30:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 2,
-        title: "Create dashboard layout and navigation",
-        description: "Design responsive dashboard layout with sidebar navigation and grid system for widgets",
-        status: "review",
-        priority: "medium",
-        assignedTo: 2,
-        estimatedHours: "10.0",
-        actualHours: "12.0",
-        dueDate: new Date("2024-11-08"),
-        completedAt: null,
-        position: 2,
-        labels: ["frontend", "design", "layout"],
-        checklist: [
-          { id: "1", text: "Dashboard wireframes", completed: true },
-          { id: "2", text: "Responsive grid system", completed: true },
-          { id: "3", text: "Navigation component", completed: true },
-          { id: "4", text: "Widget container system", completed: false }
-        ],
-        createdBy: 2,
-        createdAt: new Date("2024-11-02T09:00:00Z"),
-        updatedAt: new Date("2024-11-07T17:45:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 2,
-        title: "Performance optimization for large datasets",
-        description: "Implement data pagination, lazy loading, and virtualization for handling large datasets efficiently",
-        status: "todo",
-        priority: "medium",
-        assignedTo: 3,
-        estimatedHours: "18.0",
-        actualHours: null,
-        dueDate: new Date("2024-11-20"),
-        completedAt: null,
-        position: 3,
-        labels: ["performance", "optimization", "frontend"],
-        checklist: [
-          { id: "1", text: "Implement data pagination", completed: false },
-          { id: "2", text: "Lazy loading for charts", completed: false },
-          { id: "3", text: "Virtual scrolling", completed: false },
-          { id: "4", text: "Memory optimization", completed: false }
-        ],
-        createdBy: 2,
-        createdAt: new Date("2024-11-02T09:15:00Z"),
-        updatedAt: new Date("2024-11-02T09:15:00Z")
-      },
-
-      // FinTech Mobile App Tasks (Project 3)
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 3,
-        title: "Mobile app architecture planning",
-        description: "Define React Native app structure, navigation, and state management strategy",
-        status: "done",
-        priority: "high",
-        assignedTo: 1,
-        estimatedHours: "4.0",
-        actualHours: "4.5",
-        dueDate: new Date("2024-11-01"),
-        completedAt: new Date("2024-10-31T14:30:00Z"),
-        position: 0,
-        labels: ["mobile", "architecture", "planning"],
-        checklist: [
-          { id: "1", text: "Choose navigation library", completed: true },
-          { id: "2", text: "Setup Redux state management", completed: true },
-          { id: "3", text: "Define folder structure", completed: true }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-28T10:00:00Z"),
-        updatedAt: new Date("2024-10-31T14:30:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 3,
-        title: "Implement biometric authentication",
-        description: "Add fingerprint and face ID authentication for secure app access",
-        status: "in_progress",
-        priority: "high",
-        assignedTo: 2,
-        estimatedHours: "20.0",
-        actualHours: "12.0",
-        dueDate: new Date("2024-11-18"),
-        completedAt: null,
-        position: 1,
-        labels: ["mobile", "security", "biometric"],
-        checklist: [
-          { id: "1", text: "Research biometric libraries", completed: true },
-          { id: "2", text: "Implement fingerprint auth", completed: true },
-          { id: "3", text: "Add face ID support", completed: false },
-          { id: "4", text: "Fallback to PIN/password", completed: false },
-          { id: "5", text: "Security testing", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-28T10:15:00Z"),
-        updatedAt: new Date("2024-11-15T09:20:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 3,
-        title: "Banking API integration",
-        description: "Integrate with banking APIs for account management, transactions, and balance inquiries",
-        status: "todo",
-        priority: "high",
-        assignedTo: null,
-        estimatedHours: "28.0",
-        actualHours: null,
-        dueDate: new Date("2024-12-05"),
-        completedAt: null,
-        position: 2,
-        labels: ["backend", "api", "banking"],
-        checklist: [
-          { id: "1", text: "API documentation review", completed: false },
-          { id: "2", text: "Authentication setup", completed: false },
-          { id: "3", text: "Account management endpoints", completed: false },
-          { id: "4", text: "Transaction processing", completed: false },
-          { id: "5", text: "Error handling", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-28T10:30:00Z"),
-        updatedAt: new Date("2024-10-28T10:30:00Z")
-      },
-      {
-        id: this.currentProjectTaskId++,
-        projectId: 3,
-        title: "Transaction history and analytics",
-        description: "Create transaction history view with spending analytics and categorization",
-        status: "todo",
-        priority: "medium",
-        assignedTo: null,
-        estimatedHours: "22.0",
-        actualHours: null,
-        dueDate: new Date("2024-12-15"),
-        completedAt: null,
-        position: 3,
-        labels: ["mobile", "analytics", "transactions"],
-        checklist: [
-          { id: "1", text: "Transaction list component", completed: false },
-          { id: "2", text: "Spending analytics charts", completed: false },
-          { id: "3", text: "Category management", completed: false },
-          { id: "4", text: "Export functionality", completed: false }
-        ],
-        createdBy: 1,
-        createdAt: new Date("2024-10-28T10:45:00Z"),
-        updatedAt: new Date("2024-10-28T10:45:00Z")
-      }
-    ];
-
-    sampleProjectTasks.forEach(task => this.projectTasks.set(task.id, task));
+    // No sample tasks - start with empty state for production
 
     // Create sample support tickets
     const sampleSupportTickets: SupportTicket[] = [
@@ -1727,115 +1091,7 @@ export class MemStorage implements IStorage {
 
     sampleSupportTicketMessages.forEach(message => this.supportTicketMessages.set(message.id, message));
 
-    // Create sample messages for projects
-    const sampleMessages: Message[] = [
-      // Messages for E-commerce Platform project (ID: 1)
-      {
-        id: this.currentMessageId++,
-        projectId: 1, // E-commerce Platform
-        senderId: 1, // TechFlow client (Sarah Chen)
-        senderType: "client",
-        content: "Hi team! I'm really excited about the progress on our e-commerce platform. The mockups look fantastic. I have a few questions about the checkout flow - can we schedule a quick call to discuss?",
-        sentAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-        isRead: false
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 1,
-        senderId: 1, // Alex Thompson (team member)
-        senderType: "team_member",
-        content: "Thanks Sarah! Absolutely, let's schedule that call. I'm available tomorrow afternoon. The checkout flow is one of the key features we've been refining. I'll send you a calendar invite shortly.",
-        sentAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-        isRead: true
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 1,
-        senderId: 1, // TechFlow client
-        senderType: "client",
-        content: "Perfect! Also, I wanted to mention that our marketing team is planning a soft launch in early January. Do you think we'll be ready by then? The timeline looks good but I wanted to double-check.",
-        sentAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-        isRead: false
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 1,
-        senderId: 2, // Sarah Johnson (team member)
-        senderType: "team_member",
-        content: "Hi Sarah! Based on our current progress (75% complete), January launch looks very achievable. We're on track to finish development by mid-December, which gives us time for thorough testing. I'll send you a detailed timeline breakdown.",
-        sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        isRead: false
-      },
-
-      // Messages for Analytics Dashboard project (ID: 2)
-      {
-        id: this.currentMessageId++,
-        projectId: 2, // Analytics Dashboard
-        senderId: 2, // DataViz client (Michael Rodriguez)
-        senderType: "client",
-        content: "The dashboard is looking incredible! Our team is particularly impressed with the real-time data visualization. One quick question - can we add a feature to export the reports to PDF?",
-        sentAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-        isRead: true
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 2,
-        senderId: 3, // Mike Chen (team member)
-        senderType: "team_member",
-        content: "Thanks Michael! Great to hear the feedback. PDF export is definitely doable - I can add that to our next sprint. It'll probably add about 3-4 days to the timeline. Should I go ahead and implement it?",
-        sentAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-        isRead: true
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 2,
-        senderId: 2, // DataViz client
-        senderType: "client",
-        content: "Yes, please go ahead with the PDF export feature. The extra time is worth it - our executives love having printed reports for board meetings. Thanks for being so accommodating!",
-        sentAt: new Date(Date.now() - 90 * 60 * 1000), // 1.5 hours ago
-        isRead: false
-      },
-
-      // Messages for FinTech Mobile App project (ID: 3)
-      {
-        id: this.currentMessageId++,
-        projectId: 3, // FinTech Mobile App
-        senderId: 3, // PayFlow client (Emma Thompson)
-        senderType: "client",
-        content: "Hi team! I just reviewed the latest app prototypes and I'm blown away by the user experience design. The security features integration looks seamless. My only concern is about the loading times - are we optimizing for performance?",
-        sentAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
-        isRead: true
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 3,
-        senderId: 1, // Alex Thompson (team member)
-        senderType: "team_member",
-        content: "Hi Emma! Performance is definitely a top priority for us, especially for financial apps. We're implementing lazy loading, image optimization, and efficient API calls. Current load times are under 2 seconds, and we're aiming for sub-1 second.",
-        sentAt: new Date(Date.now() - 7 * 60 * 60 * 1000), // 7 hours ago
-        isRead: true
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 3,
-        senderId: 3, // PayFlow client
-        senderType: "client",
-        content: "That sounds fantastic! Under 1 second would be amazing. Our users expect lightning-fast performance when dealing with their finances. Keep up the excellent work. When can we expect the next build for testing?",
-        sentAt: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
-        isRead: false
-      },
-      {
-        id: this.currentMessageId++,
-        projectId: 3,
-        senderId: 2, // Sarah Johnson (team member)  
-        senderType: "team_member",
-        content: "Hi Emma! The next build will be ready by Friday. It'll include the performance optimizations Alex mentioned, plus the new biometric authentication flow. I'll send you the TestFlight link as soon as it's ready.",
-        sentAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        isRead: false
-      }
-    ];
-
-    sampleMessages.forEach(message => this.messages.set(message.id, message));
+    // No sample messages - start with empty state for production
   }
 
   // Users
@@ -2500,9 +1756,25 @@ export class MemStorage implements IStorage {
 
   // Team Management
   async getTeamMembers(organizationId: number): Promise<(User & { role: string; status: string })[]> {
-    const orgUsers = Array.from(this.users.values()).filter(u => u.organizationId === organizationId);
+    // Get all user roles for this organization
+    const orgUserRoles = Array.from(this.userRoles.values()).filter(r => r.organizationId === organizationId);
+    console.log('🔍 Found user roles for org', organizationId, ':', orgUserRoles.length);
     
-    return orgUsers.map(user => {
+    // Get users who have roles in this organization, plus legacy users with organizationId
+    const legacyOrgUsers = Array.from(this.users.values()).filter(u => u.organizationId === organizationId);
+    const roleBasedUsers = orgUserRoles.map(role => this.users.get(role.userId)).filter(u => u !== undefined);
+    
+    console.log('🔍 Legacy org users:', legacyOrgUsers.length, 'Role-based users:', roleBasedUsers.length);
+    
+    // Combine and deduplicate users
+    const allUsers = [...legacyOrgUsers, ...roleBasedUsers];
+    const uniqueUsers = allUsers.filter((user, index, self) => 
+      index === self.findIndex(u => u.id === user.id)
+    );
+    
+    console.log('🔍 Total unique users for org:', uniqueUsers.length);
+    
+    return uniqueUsers.map(user => {
       const userRole = Array.from(this.userRoles.values()).find(r => r.userId === user.id && r.organizationId === organizationId);
       
       return {
@@ -2575,6 +1847,11 @@ export class MemStorage implements IStorage {
     user.isActive = !suspend;
     this.users.set(userId, user);
     return true;
+  }
+
+  // Debug method to get all user roles
+  async getAllUserRoles(): Promise<UserRole[]> {
+    return Array.from(this.userRoles.values());
   }
 
   // Enhanced Invitation System
@@ -2739,8 +2016,15 @@ export class MemStorage implements IStorage {
   }
 
   async getOnboardingFormByProject(projectId: number): Promise<OnboardingForm | undefined> {
-    return Array.from(this.onboardingForms.values())
-      .find(form => form.projectId === projectId && form.isActive);
+    // Get the project first to find the assigned onboarding form
+    const project = this.projects.get(projectId);
+    if (!project || !project.onboardingFormId) {
+      return undefined;
+    }
+    
+    // Return the assigned onboarding form
+    const form = this.onboardingForms.get(project.onboardingFormId);
+    return form && form.isActive ? form : undefined;
   }
 
   async getOnboardingFormWithSubmissions(id: number): Promise<FormWithSubmissions | undefined> {
@@ -3429,4 +2713,10 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Import Supabase storage for production
+import { SupabaseStorage } from './supabase-storage-simple';
+
+// Use Supabase in production, memory storage in development
+export const storage = process.env.NODE_ENV === 'production' 
+  ? new SupabaseStorage() 
+  : new MemStorage();

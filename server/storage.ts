@@ -411,6 +411,7 @@ export class MemStorage implements IStorage {
     const sampleOnboardingForms: OnboardingForm[] = [
       {
         id: this.currentOnboardingFormId++,
+        ownerId: 1,
         organizationId: 1,
         projectId: 1,
         title: "Website Project Onboarding",
@@ -511,6 +512,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: this.currentOnboardingFormId++,
+        ownerId: 1,
         organizationId: 1,
         projectId: null, // General organization form
         title: "General Client Intake Form",
@@ -822,6 +824,7 @@ export class MemStorage implements IStorage {
       // Brand Kit Assets
       {
         id: 1,
+        ownerId: 1,
         organizationId: 1,
         projectId: null, // Organization-wide asset
         name: "company-logo.svg",
@@ -839,6 +842,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 2,
+        ownerId: 1,
         organizationId: 1,
         projectId: null,
         name: "brand-colors.png",
@@ -856,6 +860,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 3,
+        ownerId: 1,
         organizationId: 1,
         projectId: null,
         name: "typography-guide.pdf",
@@ -874,6 +879,7 @@ export class MemStorage implements IStorage {
       // Project-specific Assets
       {
         id: 4,
+        ownerId: 1,
         organizationId: 1,
         projectId: 1,
         name: "hero-image.jpg",
@@ -891,6 +897,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 5,
+        ownerId: 1,
         organizationId: 1,
         projectId: 1,
         name: "wireframes.fig",
@@ -908,6 +915,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 6,
+        ownerId: 1,
         organizationId: 1,
         projectId: 2,
         name: "product-photos.zip",
@@ -926,6 +934,7 @@ export class MemStorage implements IStorage {
       // Template Assets
       {
         id: 7,
+        ownerId: 1,
         organizationId: 1,
         projectId: null,
         name: "email-template.html",
@@ -943,6 +952,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 8,
+        ownerId: 1,
         organizationId: 1,
         projectId: null,
         name: "social-media-kit.zip",
@@ -2733,131 +2743,7 @@ export class MemStorage implements IStorage {
       return { ...ticket, messages, assignee, user };
     });
   }
-
-  // Missing support ticket methods - returning stub implementations
-  async getSupportTickets(organizationId: number): Promise<SupportTicket[]> {
-    return Array.from(this.supportTickets.values())
-      .filter(ticket => ticket.organizationId === organizationId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-
-  async getTicketsByStatus(status: string): Promise<SupportTicket[]> {
-    return Array.from(this.supportTickets.values())
-      .filter(ticket => ticket.status === status);
-  }
-
-  async getTicketsByCategory(category: string): Promise<SupportTicket[]> {
-    return Array.from(this.supportTickets.values())
-      .filter(ticket => ticket.category === category);
-  }
-
-  async getSupportTicket(id: number): Promise<SupportTicket | undefined> {
-    return this.supportTickets.get(id);
-  }
-
-  async createSupportTicket(ticket: InsertSupportTicket): Promise<SupportTicket> {
-    const newTicket: SupportTicket = {
-      ...ticket,
-      id: this.currentSupportTicketId++,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      organizationId: 1 // Default for MemStorage
-    };
-    this.supportTickets.set(newTicket.id, newTicket);
-    return newTicket;
-  }
-
-  async updateSupportTicket(id: number, ticket: Partial<InsertSupportTicket>): Promise<SupportTicket | undefined> {
-    const existing = this.supportTickets.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...ticket, updatedAt: new Date() };
-    this.supportTickets.set(id, updated);
-    return updated;
-  }
-
-  async deleteSupportTicket(id: number): Promise<boolean> {
-    return this.supportTickets.delete(id);
-  }
-
-  async createSupportTicketMessage(message: InsertSupportTicketMessage): Promise<SupportTicketMessage> {
-    const newMessage: SupportTicketMessage = {
-      ...message,
-      id: this.currentSupportTicketMessageId++,
-      createdAt: new Date()
-    };
-    this.supportTicketMessages.set(newMessage.id, newMessage);
-    return newMessage;
-  }
-
-  async getSupportTicketMessages(ticketId: number): Promise<SupportTicketMessage[]> {
-    return Array.from(this.supportTicketMessages.values())
-      .filter(msg => msg.ticketId === ticketId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  }
-
-  // Organization management methods - stub implementations
-  async getOrganization(id: number): Promise<Organization | undefined> {
-    return this.organizations.get(id);
-  }
-
-  async getOrganizationWithUsage(id: number): Promise<OrganizationWithUsage | undefined> {
-    const org = this.organizations.get(id);
-    if (!org) return undefined;
-    return {
-      ...org,
-      usage: {
-        projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
-        collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
-        storage: 0
-      }
-    };
-  }
-
-  async getOrganizationWithBilling(id: number): Promise<OrganizationWithBilling | undefined> {
-    const org = this.organizations.get(id);
-    if (!org) return undefined;
-    return {
-      ...org,
-      currentPlan: BILLING_PLANS.pro,
-      usage: {
-        projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
-        collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
-        storage: 0
-      }
-    };
-  }
-
-  async getOrganizationUsage(id: number): Promise<{ projects: number; collaborators: number; storage: number }> {
-    return {
-      projects: Array.from(this.projects.values()).filter(p => p.ownerId === id).length,
-      collaborators: Array.from(this.userRoles.values()).filter(r => r.organizationId === id).length,
-      storage: 0
-    };
-  }
-
-  async updateOrganizationBilling(id: number, data: any): Promise<Organization | undefined> {
-    const org = this.organizations.get(id);
-    if (!org) return undefined;
-    const updated = { ...org, ...data };
-    this.organizations.set(id, updated);
-    return updated;
-  }
-
-  async updateUser(id: number, data: any): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    const updated = { ...user, ...data };
-    this.users.set(id, updated);
-    return updated;
-  }
-
-  async getAllUserRoles(organizationId: number): Promise<UserRole[]> {
-    return Array.from(this.userRoles.values())
-      .filter(role => role.organizationId === organizationId);
-  }
 }
-
 // Import Supabase storage for production
 import { SupabaseStorage } from './supabase-storage';
 

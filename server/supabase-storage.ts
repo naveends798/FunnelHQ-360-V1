@@ -891,26 +891,10 @@ export class SupabaseStorage implements IStorage {
 
   // Organization management methods
   async getOrganization(id: number): Promise<any> { return undefined; }
-  async getOrganizationWithUsage(id: number): Promise<any> { return undefined; }
-  async getOrganizationWithBilling(id: number): Promise<any> { return undefined; }
   async getOrganizationUsage(id: number): Promise<{ projects: number; collaborators: number; storage: number }> { 
     return { projects: 0, collaborators: 0, storage: 0 }; 
   }
   async updateOrganizationBilling(id: number, data: any): Promise<any> { return undefined; }
-  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
-    const { data, error } = await this.supabase
-      .from('users')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-    return data || undefined;
-  }
   async getAllUserRoles(organizationId: number): Promise<UserRole[]> { return []; }
 
   // Project tasks methods

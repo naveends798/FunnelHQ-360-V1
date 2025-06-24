@@ -734,13 +734,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: "New Task Assigned",
           message: `${assigner.name} assigned you a new task: "${task.title}"`,
           data: {
-            taskId: [task.id],
-            taskTitle: [task.title],
-            projectId: [task.projectId],
-            projectTitle: [project.title],
-            assignedBy: [assigner.name],
-            priority: [task.priority],
-            dueDate: [task.dueDate]
+            taskId: task.id,
+            taskTitle: task.title,
+            projectId: task.projectId,
+            projectTitle: project.title,
+            assignedBy: assigner.name,
+            priority: task.priority,
+            dueDate: task.dueDate
           },
           actionUrl: `/tasks/${task.id}`
         };
@@ -805,10 +805,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: "Assigned to New Project",
           message: `You have been assigned to the project "${project.title}" as ${memberData.role.replace('_', ' ')}`,
           data: { 
-            projectId: [project.id],
-            projectTitle: [project.title],
-            role: [memberData.role],
-            assignedBy: [assigner?.name || 'Admin']
+            projectId: project.id,
+            projectTitle: project.title,
+            role: memberData.role,
+            assignedBy: assigner?.name || 'Admin'
           },
           isRead: false,
           actionUrl: `/projects/${project.id}`
@@ -1114,7 +1114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint to check user roles
   app.get("/api/debug/user-roles", async (req, res) => {
     try {
-      const userRoles = await storage.getAllUserRoles();
+      const userRoles = await storage.getAllUserRoles(1); // TODO: get organizationId from auth context
       res.json(userRoles);
     } catch (error) {
       res.status(500).json({ error: "Failed to get user roles" });
@@ -1994,6 +1994,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { stripe } = await import("./billing.js");
       const signature = req.headers['stripe-signature'] as string;
       
+      if (!stripe) {
+        return res.status(200).json({ received: true, message: "Stripe not configured in development mode" });
+      }
+      
       let event;
       try {
         event = stripe.webhooks.constructEvent(
@@ -2100,7 +2104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "support",
         title: "New Support Ticket",
         message: `New ${ticket.category} ticket: ${ticket.title}`,
-        data: { ticketId: [ticket.id] },
+        data: { ticketId: ticket.id },
         isRead: false,
         actionUrl: `/support/tickets/${ticket.id}`
       });
@@ -2171,7 +2175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: "support",
           title: "New Message",
           message: `New message on ticket: ${ticket.title}`,
-          data: { ticketId: [ticket.id], messageId: [message.id] },
+          data: { ticketId: ticket.id, messageId: message.id },
           isRead: false,
           actionUrl: `/support/tickets/${ticket.id}`
         });
@@ -2240,10 +2244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: "New Message",
               message: `New message in project: ${project.title}`,
               data: { 
-                projectId: [messageData.projectId],
-                messageId: [message.id],
-                projectName: [project.title],
-                senderName: [participant.name]
+                projectId: messageData.projectId,
+                messageId: message.id,
+                projectName: project.title,
+                senderName: participant.name
               }
             });
           }
@@ -2470,7 +2474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: "test",
         title: "Test Notification",
         message: `This is a test notification created at ${new Date().toLocaleTimeString()}`,
-        data: { test: [true], timestamp: [Date.now()] },
+        data: { test: true, timestamp: Date.now() },
         isRead: false,
         actionUrl: "/dashboard"
       };

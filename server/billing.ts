@@ -7,7 +7,7 @@ const isDevelopmentMode = process.env.NODE_ENV === 'development' &&
 
 // Initialize Stripe only if we have real keys
 export const stripe = isDevelopmentMode ? null : new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-05-28.basil',
 });
 
 // Stripe Product IDs mapping (you'll need to create these in your Stripe dashboard)
@@ -221,7 +221,7 @@ export class BillingService {
       };
     }
 
-    const invoice = await stripe!.invoices.upcoming({
+    const invoice = await stripe!.invoices.retrieveUpcoming({
       subscription: subscriptionId,
     });
 

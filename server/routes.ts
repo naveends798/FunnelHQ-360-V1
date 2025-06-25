@@ -335,6 +335,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete profile endpoint
+  app.post("/api/users/complete-profile", async (req, res) => {
+    try {
+      const { clerkId, email, name, companyName, companyRole, industry, companySize, specialization } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Try to find existing user by email
+      const users = await storage.getUsers();
+      let user = users.find(u => u.email === email);
+
+      if (user) {
+        // Update existing user
+        const updatedUser = await storage.updateUser(user.id, {
+          name: name || user.name,
+          companyName,
+          companyRole,
+          industry,
+          companySize,
+          specialization
+        });
+        res.json(updatedUser);
+      } else {
+        // Create new user
+        const newUser = await storage.createUser({
+          email,
+          name: name || email.split('@')[0],
+          companyName,
+          companyRole,
+          industry,
+          companySize,
+          specialization
+        });
+        res.status(201).json(newUser);
+      }
+    } catch (error) {
+      console.error("Failed to complete profile:", error);
+      res.status(500).json({ error: "Failed to complete profile" });
+    }
+  });
+
   // Input validation middleware
   const validateUserId = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const userId = req.query.userId as string;

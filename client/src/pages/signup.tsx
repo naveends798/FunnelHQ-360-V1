@@ -171,8 +171,8 @@ export default function SignupPage() {
           }
         }
         
-        console.log('✅ Account created successfully! Redirecting to profile completion...');
-        setLocation("/complete-profile");
+        console.log('✅ Account created successfully! Redirecting to dashboard...');
+        setLocation("/dashboard");
       } else if (result.status === "missing_requirements") {
         // Handle verification requirements
         console.log('Signup requires additional steps:', result);
@@ -201,7 +201,7 @@ export default function SignupPage() {
           // For now, let's try to proceed anyway for admin users
           if (isAdminSignup) {
             console.log('Admin user - proceeding without full verification');
-            setLocation("/complete-profile");
+            setLocation("/dashboard");
           } else {
             setError("Account created but requires additional verification. Please contact support.");
           }

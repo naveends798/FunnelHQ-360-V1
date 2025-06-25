@@ -152,8 +152,9 @@ async function handleUserCreated(data) {
 
     console.log('🔄 Creating user in Supabase:', userData);
 
-    // Call our internal API to create the user
-    const response = await fetch(`${process.env.API_BASE_URL || 'https://your-backend.netlify.app'}/api/supabase/users`, {
+    // Call our internal API to create the user (using relative path for same Netlify site)
+    const baseUrl = process.env.URL || 'https://localhost:8888';
+    const response = await fetch(`${baseUrl}/.netlify/functions/supabase-users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -340,8 +340,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { clerkId, email, name, companyName, companyRole, industry, companySize, specialization } = req.body;
       
+      console.log("Complete profile request body:", req.body);
+      
       if (!email) {
+        console.error("Missing email in request body");
         return res.status(400).json({ error: "Email is required" });
+      }
+
+      if (!name) {
+        console.error("Missing name in request body");
+        return res.status(400).json({ error: "Name is required" });
+      }
+
+      // Validate required profile fields
+      if (!companyName || !companyRole || !industry || !companySize || !specialization) {
+        console.error("Missing required profile fields:", { companyName, companyRole, industry, companySize, specialization });
+        return res.status(400).json({ 
+          error: "All profile fields are required", 
+          missing: {
+            companyName: !companyName,
+            companyRole: !companyRole,
+            industry: !industry,
+            companySize: !companySize,
+            specialization: !specialization
+          }
+        });
       }
 
       // Try to find existing user by email
@@ -351,6 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user) {
         // Update existing user
         const updatedUser = await storage.updateUser(user.id, {
+          clerkUserId: clerkId,
           name: name || user.name,
           companyName,
           companyRole,
@@ -358,10 +382,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           companySize,
           specialization
         });
+        console.log("Updated existing user:", updatedUser?.id);
         res.json(updatedUser);
       } else {
         // Create new user
         const newUser = await storage.createUser({
+          clerkUserId: clerkId,
           email,
           name: name || email.split('@')[0],
           companyName,
@@ -370,11 +396,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           companySize,
           specialization
         });
+        console.log("Created new user:", newUser.id);
         res.status(201).json(newUser);
       }
     } catch (error) {
       console.error("Failed to complete profile:", error);
-      res.status(500).json({ error: "Failed to complete profile" });
+      res.status(500).json({ error: "Failed to complete profile", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

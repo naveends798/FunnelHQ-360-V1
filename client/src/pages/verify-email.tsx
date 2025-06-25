@@ -53,7 +53,7 @@ export default function VerifyEmailPage() {
         
         // Small delay to show success message
         setTimeout(() => {
-          setLocation("/complete-profile");
+          setLocation("/dashboard");
         }, 1500);
       } else {
         setError("Verification incomplete. Please try again.");
@@ -95,7 +95,7 @@ export default function VerifyEmailPage() {
                 Email Verified!
               </CardTitle>
               <p className="text-gray-400">
-                Your account has been successfully created. Redirecting you to complete your profile...
+                Your account has been successfully created. Redirecting you to the dashboard...
               </p>
             </CardHeader>
           </div>

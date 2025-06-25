@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  SECRETS_SCAN_OMIT_PATHS = ".env.netlify.example"
 
 [functions]
   directory = "netlify/functions/"

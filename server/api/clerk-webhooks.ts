@@ -125,7 +125,6 @@ async function handleUserCreated(evt: WebhookEvent) {
     const userData = {
       email: email_addresses?.[0]?.email_address,
       name: `${first_name || ''} ${last_name || ''}`.trim(),
-      clerkUserId: id,
       subscriptionPlan: 'pro_trial' // New users get 14-day trial
     };
 

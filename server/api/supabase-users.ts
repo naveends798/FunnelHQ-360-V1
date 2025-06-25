@@ -17,7 +17,6 @@ const supabaseAdmin = createClient<Database>(
 interface CreateUserRequest {
   email: string
   name: string
-  clerkUserId: string
   avatar?: string
   companyName?: string
   companyRole?: string
@@ -46,9 +45,9 @@ export const createOrUpdateUser = async (req: Request, res: Response) => {
     const userData: CreateUserRequest = req.body
 
     // Validate required fields
-    if (!userData.email || !userData.name || !userData.clerkUserId) {
+    if (!userData.email || !userData.name) {
       return res.status(400).json({
-        error: 'Missing required fields: email, name, and clerkUserId are required'
+        error: 'Missing required fields: email and name are required'
       })
     }
 

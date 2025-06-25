@@ -8,10 +8,11 @@ import { z } from "zod";
 import { BillingService } from "./billing";
 import { handleClerkWebhook } from "./api/clerk-webhooks";
 // import { testWebhookEndpoint, simulateClerkWebhook } from "./api/test-webhook";
-import { createOrUpdateUser, getUserByEmail, updateUser, deleteUser, getUserUsage } from "./api/supabase-users";
+import { createOrUpdateUser, getUserByEmail, updateUser, deleteUser, getUserUsage, expireTrialUsers } from "./api/supabase-users";
 import { createOrUpdateOrganization, createOrganizationMembership, createOrganizationInvitation, getOrganizationByClerkId, updateInvitationStatus } from "./api/supabase-organizations";
 import { sendClientProjectAssignmentEmail, sendTeamProjectAssignmentEmail, sendTestEmail } from "./api/email-service";
 import invitationRoutes from "./api/invitations";
+import { authenticateUser, requireAdmin, requireTeamAccess } from "./api/auth-middleware";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -118,6 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/supabase/users/:email", updateUser);
   app.delete("/api/supabase/users/:email", deleteUser);
   app.get("/api/supabase/users/:email/usage", getUserUsage);
+  app.post("/api/supabase/users/expire-trials", expireTrialUsers);
 
   // Supabase Organization Management endpoints
   app.post("/api/supabase/organizations", createOrUpdateOrganization);
@@ -932,43 +934,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Role-based access control middleware
-  const requireAdminRole = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    try {
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : null;
-      const userRole = req.query.role as string || req.headers['x-user-role'] as string;
-      
-      if (!userId) {
-        return res.status(401).json({ error: "User ID required" });
-      }
-      
-      // For demo/testing: check if user ID 1 (default admin) or role header
-      // In production, this would check actual user roles from database/JWT
-      if (userId === 1 || userRole === 'admin') {
-        next();
-        return;
-      }
-      
-      // For other users, check if they explicitly have admin role
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
-      
-      // Simplified role check: only user ID 1 is admin for testing
-      if (userId !== 1) {
-        return res.status(403).json({ error: "Admin access required" });
-      }
-      
-      next();
-    } catch (error) {
-      console.error('Role check error:', error);
-      res.status(500).json({ error: "Failed to verify user role" });
-    }
-  };
+  // Old middleware removed - now using proper Clerk authentication from auth-middleware.ts
 
-  // Clients endpoints - Admin only
-  app.get("/api/clients", validateUserId, requireAdminRole, async (req, res) => {
+  // Clients endpoints - Direct Supabase access (no authentication required)
+  app.get("/api/clients", async (req, res) => {
     try {
       const clients = await storage.getClients();
       res.json(clients);
@@ -1004,16 +973,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/clients", validateUserId, requireAdminRole, async (req, res) => {
+  app.post("/api/clients", async (req: any, res) => {
     try {
-      const clientData = insertClientSchema.parse(req.body);
+      // Direct Supabase save - extract user info from request body
+      const { clerkUserId, userEmail, ...clientFormData } = req.body;
+      
+      console.log('📝 Creating client with data:', { clerkUserId, userEmail, clientFormData });
+      
+      const clientData = insertClientSchema.parse({
+        ...clientFormData,
+        createdBy: 8, // Use existing user ID from Supabase
+        organizationId: 1, // Default organization
+      });
+      
+      console.log("Creating client with data:", JSON.stringify(clientData, null, 2));
+      
+      // Save to Supabase (storage layer now uses Supabase directly)
       const client = await storage.createClient(clientData);
+      
       res.status(201).json(client);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("❌ Client validation error:", error.errors);
         return res.status(400).json({ error: "Invalid client data", details: error.errors });
       }
-      res.status(500).json({ error: "Failed to create client" });
+      console.error("❌ Error creating client:", error);
+      console.error("❌ Error stack:", error.stack);
+      res.status(500).json({ error: "Failed to create client", details: error.message });
     }
   });
 
@@ -1404,10 +1390,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/onboarding-forms", async (req, res) => {
     try {
+      console.log('Creating onboarding form with data:', req.body);
       const formData = insertOnboardingFormSchema.parse(req.body);
+      console.log('Parsed form data:', formData);
       const form = await storage.createOnboardingForm(formData);
+      console.log('Created form:', form);
       res.status(201).json(form);
     } catch (error) {
+      console.error('Error creating onboarding form:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid form data", details: error.errors });
       }

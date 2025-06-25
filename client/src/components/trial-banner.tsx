@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 
 export function TrialBanner() {
-  const { isProTrial, isTrialExpired, daysLeft, showUpgradeBanner } = useTrialStatus();
+  const { isOnTrial, isTrialExpired, daysLeft, showUpgradeBanner, timeRemainingText } = useTrialStatus();
   const [isDismissed, setIsDismissed] = useState(false);
   const [, setLocation] = useLocation();
 

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import Sidebar from "@/components/sidebar";
 import {
   Dialog,
   DialogContent,
@@ -158,8 +159,12 @@ export default function AdminOnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen gradient-bg">
-      <div className="p-6 space-y-6">
+    <>
+      <Sidebar />
+      
+      {/* Main Content */}
+      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-16 min-h-screen gradient-bg">
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -551,6 +556,7 @@ export default function AdminOnboardingPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </main>
+    </>
   );
 }

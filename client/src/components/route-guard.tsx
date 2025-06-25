@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Loader2, Lock } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { TrialAccessGuard } from '@/components/trial-access-guard';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -100,8 +101,12 @@ export function RouteGuard({
     );
   }
 
-  // Authorized - render children
-  return <>{children}</>;
+  // Authorized - render children with trial access guard
+  return (
+    <TrialAccessGuard>
+      {children}
+    </TrialAccessGuard>
+  );
 }
 
 // HOC version for wrapping components

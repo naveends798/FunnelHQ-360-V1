@@ -1,24 +1,31 @@
 import { useEffect, useState } from 'react';
-import { useOrganization } from '@clerk/clerk-react';
 import { useLocation } from 'wouter';
 import { useToast } from './use-toast';
+import { useAuth } from './useAuth';
+import { calculateTrialStatus, shouldBlockAccess, getAllowedRoutesForExpiredTrial, formatTrialTimeRemaining } from '@shared/trial-utils';
 
 export function useTrialStatus() {
-  const { organization } = useOrganization();
+  const { authUser } = useAuth();
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const [hasShownExpiredToast, setHasShownExpiredToast] = useState(false);
 
-  const plan = organization?.publicMetadata?.plan as string;
-  const trialEndsAt = organization?.publicMetadata?.trialEndsAt as string;
+  // Calculate trial status from user data
+  const trialStatus = calculateTrialStatus(
+    authUser?.trialStartDate || authUser?.createdAt,
+    authUser?.subscriptionPlan,
+    authUser?.stripeSubscriptionId
+  );
 
-  const isProTrial = plan === 'pro_trial';
-  const trialEndDate = trialEndsAt ? new Date(trialEndsAt) : null;
-  const now = new Date();
-  
-  const isTrialExpired = isProTrial && trialEndDate ? trialEndDate < now : false;
-  const daysLeft = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-  const hoursLeft = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60)) : 0;
+
+  const { 
+    isOnTrial: isProTrial, 
+    isTrialExpired, 
+    daysLeft, 
+    hoursLeft, 
+    trialEndDate,
+    showUpgradeBanner 
+  } = trialStatus;
 
   // Show warning when trial is about to expire
   useEffect(() => {
@@ -57,8 +64,8 @@ export function useTrialStatus() {
 
   // Redirect to billing if trial expired and on restricted route
   useEffect(() => {
-    if (isTrialExpired) {
-      const allowedRoutes = ['/billing', '/support', '/login', '/signup'];
+    if (shouldBlockAccess(trialStatus)) {
+      const allowedRoutes = getAllowedRoutesForExpiredTrial();
       const isAllowedRoute = allowedRoutes.some(route => location.startsWith(route));
       
       if (!isAllowedRoute) {
@@ -66,14 +73,10 @@ export function useTrialStatus() {
         setLocation('/billing');
       }
     }
-  }, [isTrialExpired, location, setLocation]);
+  }, [trialStatus, location, setLocation]);
 
   return {
-    isProTrial,
-    isTrialExpired,
-    trialEndDate,
-    daysLeft: Math.max(0, daysLeft),
-    hoursLeft: Math.max(0, hoursLeft),
-    showUpgradeBanner: isProTrial && (isTrialExpired || daysLeft <= 7)
+    ...trialStatus,
+    timeRemainingText: formatTrialTimeRemaining(trialStatus)
   };
 }

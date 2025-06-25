@@ -29,8 +29,8 @@ export const useSupabase = () => {
 
   const getAuthenticatedClient = async () => {
     try {
-      // Get the JWT token from Clerk with the 'supabase' template
-      const token = await getToken({ template: 'supabase' })
+      // Get the default JWT token from Clerk
+      const token = await getToken()
       
       if (!token) {
         throw new Error('No authentication token available')

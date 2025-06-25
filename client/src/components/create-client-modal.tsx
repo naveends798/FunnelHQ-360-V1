@@ -18,6 +18,7 @@ import {
   Upload
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 interface CreateClientModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ export default function CreateClientModal({ open, onOpenChange }: CreateClientMo
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { authUser } = useAuth();
+  const { user: clerkUser } = useClerkAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -73,15 +75,16 @@ export default function CreateClientModal({ open, onOpenChange }: CreateClientMo
     }
 
     try {
-      // Include required createdBy field and organizationId for multi-tenant support
+      // Include user identification in request body
       const clientData = {
         ...formData,
-        createdBy: authUser.id,
-        organizationId: authUser.organizationId || 1, // Fallback to default org
+        clerkUserId: clerkUser?.id || 'anonymous',
+        userEmail: clerkUser?.emailAddresses?.[0]?.emailAddress || authUser?.email || 'unknown@example.com',
       };
       
       console.log("Submitting client data:", clientData);
       
+      // Use simple fetch - no authentication required
       const response = await fetch("/api/clients", {
         method: "POST",
         headers: {
@@ -114,8 +117,9 @@ export default function CreateClientModal({ open, onOpenChange }: CreateClientMo
         alert(`Failed to create client: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error("Network error:", error);
-      alert("Network error occurred while creating client");
+      console.error("Error creating client:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      alert(`Failed to create client: ${errorMessage}`);
     }
   };
 

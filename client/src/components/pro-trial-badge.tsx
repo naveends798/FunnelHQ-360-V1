@@ -2,61 +2,20 @@ import { Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useOrganization } from "@/hooks/useOrganization";
+import { useTrialStatus } from "@/hooks/useTrialStatus";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 
 interface ProTrialBadgeProps {
   className?: string;
 }
 
 export function ProTrialBadge({ className }: ProTrialBadgeProps) {
-  const { isAdmin } = useAuth();
-  const { organization, isLoaded: orgLoaded } = useOrganization();
-  const [trialInfo, setTrialInfo] = useState<{
-    isProTrial: boolean;
-    daysLeft: number;
-    isTrialExpired: boolean;
-  }>({
-    isProTrial: false,
-    daysLeft: 0,
-    isTrialExpired: false
-  });
+  const { isAdmin, currentRole, authUser } = useAuth();
+  const { isOnTrial, daysLeft, isTrialExpired, timeRemainingText } = useTrialStatus();
 
-  useEffect(() => {
-    // For development/demo mode, always show trial for admin users
-    if (process.env.NODE_ENV === 'development' && isAdmin) {
-      setTrialInfo({
-        isProTrial: true,
-        daysLeft: 12, // Demo: 12 days left
-        isTrialExpired: false
-      });
-      return;
-    }
-
-    // For production with real organization data
-    if (organization && orgLoaded) {
-      const plan = organization.publicMetadata?.plan as string;
-      const trialEndsAt = organization.publicMetadata?.trialEndsAt as string;
-      
-      const isProTrial = plan === 'pro_trial';
-      const trialEndDate = trialEndsAt ? new Date(trialEndsAt) : null;
-      const now = new Date();
-      
-      const isTrialExpired = isProTrial && trialEndDate ? trialEndDate < now : false;
-      const daysLeft = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
-      setTrialInfo({
-        isProTrial,
-        daysLeft: Math.max(0, daysLeft),
-        isTrialExpired
-      });
-    }
-  }, [organization, orgLoaded, isAdmin]);
-
-  // Only show for admin users who are on pro trial
-  if (!isAdmin || !trialInfo.isProTrial) {
+  // Only show for admin users who are on trial
+  if (!isAdmin || !isOnTrial) {
     return null;
   }
 
@@ -78,7 +37,7 @@ export function ProTrialBadge({ className }: ProTrialBadgeProps) {
             Trial Period
           </span>
           <span className="text-xs font-bold text-amber-300">
-            {trialInfo.isTrialExpired ? "Expired" : `${trialInfo.daysLeft} days left`}
+            {timeRemainingText}
           </span>
         </div>
 

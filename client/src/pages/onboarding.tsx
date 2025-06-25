@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import FormBuilder from "@/components/form-builder";
 import AssignFormModal from "@/components/assign-form-modal";
+import Sidebar from "@/components/sidebar";
 import { 
   Plus, 
   Search, 
@@ -239,7 +240,12 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <>
+      <Sidebar />
+      
+      {/* Main Content */}
+      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-16">
+        <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -500,6 +506,8 @@ export default function OnboardingPage() {
         form={formToAssign}
         onAssign={handleFormAssignment}
       />
-    </div>
+        </div>
+      </main>
+    </>
   );
 }

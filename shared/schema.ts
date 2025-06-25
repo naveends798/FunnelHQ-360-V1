@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   maxProjects: integer("max_projects").default(3),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  trialStartDate: timestamp("trial_start_date"),
   createdAt: timestamp("created_at").defaultNow(),
   lastLoginAt: timestamp("last_login_at"),
   isActive: boolean("is_active").default(true),

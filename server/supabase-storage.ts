@@ -210,17 +210,26 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createClient(client: InsertClient): Promise<Client> {
+    console.log('🔄 SupabaseStorage.createClient called with:', JSON.stringify(client, null, 2));
+    
+    // Convert camelCase to snake_case for Supabase
+    const supabaseClient = {
+      name: client.name,
+      email: client.email,
+      avatar: client.avatar,
+      notes: client.notes,
+      created_by: client.createdBy, // Convert camelCase to snake_case
+      joined_at: new Date().toISOString()
+    };
+    
     const { data, error } = await this.supabase
       .from('clients')
-      .insert([{
-        ...client,
-        joined_at: new Date().toISOString()
-      }])
+      .insert([supabaseClient])
       .select()
       .single();
     
     if (error) {
-      console.error('Error creating client:', error);
+      console.error('❌ SupabaseStorage client creation error:', error);
       throw error;
     }
     console.log('✅ Client created in Supabase:', data.id);
@@ -411,13 +420,30 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
+    // Convert camelCase to snake_case for Supabase (only send existing fields)
+    const supabaseProject = {
+      title: project.title,
+      description: project.description,
+      client_id: project.clientId,
+      owner_id: project.ownerId,
+      status: project.status || 'active', // Ensure status has default value
+      progress: project.progress || 0,
+      budget: project.budget,
+      budget_used: project.budgetUsed || '0',
+      start_date: project.startDate,
+      end_date: project.endDate,
+      image: project.image,
+      priority: project.priority || 'medium',
+      team_members: project.teamMembers || [],
+      tags: project.tags || [],
+      created_by: project.createdBy,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
     const { data, error } = await this.supabase
       .from('projects')
-      .insert([{
-        ...project,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
+      .insert([supabaseProject])
       .select()
       .single();
     
@@ -910,27 +936,273 @@ export class SupabaseStorage implements IStorage {
   async getTasksByStatus(projectId: number, status: string): Promise<TaskWithAssignee[]> { return []; }
 
   // Onboarding forms methods
-  async getOnboardingForms(organizationId: number): Promise<OnboardingForm[]> { return []; }
-  async getOnboardingForm(id: number): Promise<OnboardingForm | undefined> { return undefined; }
-  async getOnboardingFormByProject(projectId: number): Promise<OnboardingForm | undefined> { return undefined; }
-  async getOnboardingFormWithSubmissions(id: number): Promise<FormWithSubmissions | undefined> { return undefined; }
-  async createOnboardingForm(form: InsertOnboardingForm): Promise<OnboardingForm> { 
-    return { ...form, id: 1, createdAt: new Date(), updatedAt: new Date() } as OnboardingForm; 
+  async getOnboardingForms(organizationId: number): Promise<OnboardingForm[]> {
+    const { data, error } = await this.supabase
+      .from('onboarding_forms')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching onboarding forms:', error);
+      return [];
+    }
+    
+    return data || [];
   }
-  async updateOnboardingForm(id: number, form: Partial<InsertOnboardingForm>): Promise<OnboardingForm | undefined> { return undefined; }
-  async deleteOnboardingForm(id: number): Promise<boolean> { return true; }
+
+  async getOnboardingForm(id: number): Promise<OnboardingForm | undefined> {
+    const { data, error } = await this.supabase
+      .from('onboarding_forms')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching onboarding form:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
+
+  async getOnboardingFormByProject(projectId: number): Promise<OnboardingForm | undefined> {
+    const { data, error } = await this.supabase
+      .from('onboarding_forms')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching onboarding form by project:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
+
+  async getOnboardingFormWithSubmissions(id: number): Promise<FormWithSubmissions | undefined> {
+    const form = await this.getOnboardingForm(id);
+    if (!form) return undefined;
+
+    const submissions = await this.getFormSubmissions(id);
+    return { ...form, submissions };
+  }
+
+  async createOnboardingForm(form: InsertOnboardingForm): Promise<OnboardingForm> {
+    const { data, error } = await this.supabase
+      .from('onboarding_forms')
+      .insert([{
+        owner_id: form.ownerId,
+        organization_id: form.organizationId,
+        project_id: form.projectId,
+        title: form.title,
+        description: form.description,
+        fields: form.fields,
+        is_template: form.isTemplate,
+        is_active: form.isActive,
+        created_by: form.createdBy,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating onboarding form:', error);
+      throw error;
+    }
+    
+    return data;
+  }
+
+  async updateOnboardingForm(id: number, form: Partial<InsertOnboardingForm>): Promise<OnboardingForm | undefined> {
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (form.title !== undefined) updateData.title = form.title;
+    if (form.description !== undefined) updateData.description = form.description;
+    if (form.fields !== undefined) updateData.fields = form.fields;
+    if (form.isTemplate !== undefined) updateData.is_template = form.isTemplate;
+    if (form.isActive !== undefined) updateData.is_active = form.isActive;
+    if (form.projectId !== undefined) updateData.project_id = form.projectId;
+
+    const { data, error } = await this.supabase
+      .from('onboarding_forms')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating onboarding form:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
+
+  async deleteOnboardingForm(id: number): Promise<boolean> {
+    const { error } = await this.supabase
+      .from('onboarding_forms')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting onboarding form:', error);
+      return false;
+    }
+    
+    return true;
+  }
 
   // Form submissions methods
-  async getFormSubmissions(formId: number): Promise<FormSubmission[]> { return []; }
-  async getFormSubmission(id: number): Promise<FormSubmission | undefined> { return undefined; }
-  async getFormSubmissionsByProjectAndClient(projectId: number, clientId: number): Promise<FormSubmission[]> { return []; }
-  async getFormSubmissionsByProject(projectId: number): Promise<FormSubmission[]> { return []; }
-  async getFormSubmissionsByOrganization(organizationId: number): Promise<FormSubmission[]> { return []; }
-  async createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission> { 
-    return { ...submission, id: 1, submittedAt: new Date() } as FormSubmission; 
+  async getFormSubmissions(formId: number): Promise<FormSubmission[]> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .select('*')
+      .eq('form_id', formId)
+      .order('submitted_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching form submissions:', error);
+      return [];
+    }
+    
+    return data || [];
   }
-  async updateFormSubmission(id: number, submission: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> { return undefined; }
-  async markSubmissionAsReviewed(id: number, reviewedBy: number): Promise<FormSubmission | undefined> { return undefined; }
+
+  async getFormSubmission(id: number): Promise<FormSubmission | undefined> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching form submission:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
+
+  async getFormSubmissionsByProjectAndClient(projectId: number, clientId: number): Promise<FormSubmission[]> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('client_id', clientId)
+      .order('submitted_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching form submissions by project and client:', error);
+      return [];
+    }
+    
+    return data || [];
+  }
+
+  async getFormSubmissionsByProject(projectId: number): Promise<FormSubmission[]> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('submitted_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching form submissions by project:', error);
+      return [];
+    }
+    
+    return data || [];
+  }
+
+  async getFormSubmissionsByOrganization(organizationId: number): Promise<FormSubmission[]> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .select(`
+        *,
+        onboarding_forms!inner(organization_id)
+      `)
+      .eq('onboarding_forms.organization_id', organizationId)
+      .order('submitted_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching form submissions by organization:', error);
+      return [];
+    }
+    
+    return data || [];
+  }
+
+  async createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .insert([{
+        form_id: submission.formId,
+        project_id: submission.projectId,
+        client_id: submission.clientId,
+        responses: submission.responses,
+        is_completed: submission.isCompleted,
+        reviewed_by: submission.reviewedBy,
+        reviewed_at: submission.reviewedAt,
+        submitted_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating form submission:', error);
+      throw error;
+    }
+    
+    return data;
+  }
+
+  async updateFormSubmission(id: number, submission: Partial<InsertFormSubmission>): Promise<FormSubmission | undefined> {
+    const updateData: any = {};
+
+    if (submission.responses !== undefined) updateData.responses = submission.responses;
+    if (submission.isCompleted !== undefined) updateData.is_completed = submission.isCompleted;
+    if (submission.reviewedBy !== undefined) updateData.reviewed_by = submission.reviewedBy;
+    if (submission.reviewedAt !== undefined) updateData.reviewed_at = submission.reviewedAt;
+
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating form submission:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
+
+  async markSubmissionAsReviewed(id: number, reviewedBy: number): Promise<FormSubmission | undefined> {
+    const { data, error } = await this.supabase
+      .from('form_submissions')
+      .update({
+        reviewed_by: reviewedBy,
+        reviewed_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error marking submission as reviewed:', error);
+      return undefined;
+    }
+    
+    return data;
+  }
 
   // Comments methods
   async getProjectComments(projectId: number): Promise<CommentWithAuthor[]> { return []; }

@@ -51,10 +51,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { isLoaded: clerkLoaded, userId, signOut: clerkSignOut } = useClerkAuthHook()
   const { user: clerkUser, isLoaded: userLoaded } = useUser()
   
-  // Use Clerk auth when available, fallback to mock only in development
-  const useMockAuth = !clerkLoaded || (!userId && process.env.NODE_ENV === 'development')
+  // Force real Clerk authentication - no mock auth in development
+  const useMockAuth = false // Disabled to force real Clerk authentication
   const testRole = (localStorage.getItem('test_role') as UserRole) || 'admin'
   const testUserName = localStorage.getItem('test_user_name') || `Demo ${testRole.charAt(0).toUpperCase() + testRole.slice(1)}`
+  
+  // Debug logging for auth state
+  console.log('🔐 Auth state:', { 
+    clerkLoaded, 
+    userId: userId ? `${userId.substring(0, 8)}...` : null, 
+    useMockAuth,
+    nodeEnv: process.env.NODE_ENV 
+  });
   
   const [permissions, setPermissions] = useState<Permission[]>([])
   
@@ -98,6 +106,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     currentRole: testRole
   }
   
+  const [supabaseUserData, setSupabaseUserData] = useState<any>(null);
+  
+  // Fetch user data from Supabase when we have an email
+  useEffect(() => {
+    if (clerkUser?.emailAddresses?.[0]?.emailAddress) {
+      const email = clerkUser.emailAddresses[0].emailAddress;
+      fetch(`/api/supabase/users/${encodeURIComponent(email)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            setSupabaseUserData(data.user);
+            console.log('📊 Loaded Supabase user data:', data.user);
+          }
+        })
+        .catch(err => console.error('Failed to load user data from Supabase:', err));
+    }
+  }, [clerkUser?.emailAddresses?.[0]?.emailAddress]);
+
   // Use real Clerk user when available
   const realUser: User | null = useMockAuth ? mockUser : (clerkUser ? {
     id: clerkUser.id,
@@ -109,22 +135,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   } : null)
 
   const realAuthUser: AuthUser | null = useMockAuth ? mockAuthUser : (clerkUser ? {
-    id: 2, // Your Supabase user ID (from manual sync earlier)
+    id: supabaseUserData?.id || 2, // Use Supabase ID if available
     supabaseId: clerkUser.id,
     username: clerkUser.username || '',
     email: clerkUser.emailAddresses?.[0]?.emailAddress || '',
     name: clerkUser.fullName || '',
     avatar: clerkUser.imageUrl || null,
-    companyName: clerkUser.publicMetadata?.companyName as string || null,
-    companyRole: clerkUser.publicMetadata?.companyRole as string || null,
-    industry: clerkUser.publicMetadata?.industry as string || null,
-    companySize: clerkUser.publicMetadata?.companySize as string || null,
-    subscriptionPlan: clerkUser.publicMetadata?.subscriptionPlan as string || 'solo',
-    subscriptionStatus: clerkUser.publicMetadata?.subscriptionStatus as string || 'active',
-    maxProjects: clerkUser.publicMetadata?.maxProjects as number || 3,
-    stripeCustomerId: clerkUser.publicMetadata?.stripeCustomerId as string || null,
-    stripeSubscriptionId: clerkUser.publicMetadata?.stripeSubscriptionId as string || null,
-    createdAt: new Date(clerkUser.createdAt || Date.now()),
+    companyName: supabaseUserData?.company_name || clerkUser.publicMetadata?.companyName as string || null,
+    companyRole: supabaseUserData?.company_role || clerkUser.publicMetadata?.companyRole as string || null,
+    industry: supabaseUserData?.industry || clerkUser.publicMetadata?.industry as string || null,
+    companySize: supabaseUserData?.company_size || clerkUser.publicMetadata?.companySize as string || null,
+    specialization: supabaseUserData?.specialization || null,
+    subscriptionPlan: supabaseUserData?.subscription_plan || clerkUser.publicMetadata?.subscriptionPlan as string || 'pro_trial',
+    subscriptionStatus: supabaseUserData?.subscription_status || clerkUser.publicMetadata?.subscriptionStatus as string || 'active',
+    maxProjects: supabaseUserData?.max_projects ?? (clerkUser.publicMetadata?.maxProjects as number || -1),
+    stripeCustomerId: supabaseUserData?.stripe_customer_id || clerkUser.publicMetadata?.stripeCustomerId as string || null,
+    stripeSubscriptionId: supabaseUserData?.stripe_subscription_id || clerkUser.publicMetadata?.stripeSubscriptionId as string || null,
+    trialStartDate: supabaseUserData?.trial_start_date ? new Date(supabaseUserData.trial_start_date) : (clerkUser.publicMetadata?.trialStartDate ? new Date(clerkUser.publicMetadata.trialStartDate as string) : new Date(clerkUser.createdAt || Date.now())),
+    createdAt: supabaseUserData?.created_at ? new Date(supabaseUserData.created_at) : new Date(clerkUser.createdAt || Date.now()),
     lastLoginAt: new Date(),
     isActive: true,
     collaborations: [],
@@ -139,14 +167,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Update user state when Clerk data changes
   useEffect(() => {
-    console.log('🔍 Auth state:', { clerkLoaded, userLoaded, userId, useMockAuth })
+    console.log('🔍 Auth state:', { clerkLoaded, userLoaded, userId, useMockAuth, supabaseUserData })
     if (clerkLoaded) {
       setUser(realUser)
       setAuthUser(realAuthUser)
       setLoading(false)
       console.log('✅ Auth loaded:', { user: realUser, authUser: realAuthUser })
     }
-  }, [clerkLoaded, userLoaded, realUser, realAuthUser])
+  }, [clerkLoaded, userLoaded, realUser, realAuthUser, supabaseUserData])
 
   const signIn = async (email: string, password: string) => {
     return { data: null, error: null }

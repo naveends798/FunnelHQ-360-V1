@@ -116,19 +116,8 @@ export default function SignupPage() {
     e.preventDefault();
     if (!signUp) return;
 
-    // Validate that we have either invitation or admin signup
-    if (!invitation && !isAdminSignup) {
-      setError("Account creation requires an invitation from an administrator.");
-      return;
-    }
-
-    // For non-admin roles, require invitation
-    if (!isAdminSignup && (!invitation || invitation.role !== 'admin')) {
-      if (!invitation) {
-        setError("Team members and clients require an invitation to sign up.");
-        return;
-      }
-    }
+    // Allow open signup with Pro Trial - no invitation required
+    console.log('🎯 Allowing open signup with Pro Trial access');
 
     setIsLoading(true);
     setError("");
@@ -146,6 +135,29 @@ export default function SignupPage() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
+        
+        // Set up Pro Trial metadata for new user
+        try {
+          const trialEndDate = new Date();
+          trialEndDate.setDate(trialEndDate.getDate() + 14); // 14-day trial
+          
+          await clerk?.user?.update({
+            publicMetadata: {
+              role: 'admin', // Pro Trial users get admin-level access
+              subscriptionPlan: 'pro_trial',
+              trialStartDate: new Date().toISOString(),
+              trialEndDate: trialEndDate.toISOString(),
+              maxProjects: -1, // Unlimited during trial
+              maxStorage: 107374182400, // 100GB
+              organizationId: 1
+            }
+          });
+          
+          console.log('✅ Pro Trial metadata set for new user');
+        } catch (metadataError) {
+          console.error('Error setting trial metadata:', metadataError);
+          // Continue anyway - user is created
+        }
         
         // If we have an invitation, accept it
         if (invitation) {

@@ -1,5 +1,7 @@
 import { useOrganization } from '@clerk/clerk-react';
 import { useToast } from './use-toast';
+import { calculateTrialStatus, getEffectiveSubscriptionPlan } from '@shared/trial-utils';
+import { useAuth } from './useAuth';
 
 type PlanType = 'pro_trial' | 'solo' | 'pro';
 
@@ -49,24 +51,31 @@ const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
 
 export function usePlanFeatures() {
   const { organization } = useOrganization();
+  const { authUser } = useAuth();
   const { toast } = useToast();
 
-  // Get current plan from organization metadata
-  const currentPlan = (organization?.publicMetadata?.plan as PlanType) || 'pro_trial';
-  const trialEndsAt = organization?.publicMetadata?.trialEndsAt as string | undefined;
+  // Get current plan from user data (fallback to organization metadata)
+  const currentPlan = (authUser?.subscriptionPlan as PlanType) || 
+                     (organization?.publicMetadata?.plan as PlanType) || 
+                     'pro_trial';
   
-  // Check if trial has expired
-  const isTrialExpired = trialEndsAt ? new Date(trialEndsAt) < new Date() : false;
+  // Calculate trial status
+  const trialStatus = calculateTrialStatus(
+    authUser?.trialStartDate || authUser?.createdAt,
+    currentPlan,
+    authUser?.stripeSubscriptionId
+  );
   
-  // Get features for current plan
-  const features = PLAN_FEATURES[currentPlan];
+  // Get effective plan (considering expired trial)
+  const effectivePlan = getEffectiveSubscriptionPlan(currentPlan, trialStatus) as PlanType;
+  
+  // Get features for effective plan
+  const features = PLAN_FEATURES[effectivePlan];
+  const isTrialExpired = trialStatus.isTrialExpired;
   
   // Helper functions
   const checkFeature = (feature: keyof PlanFeatures): boolean => {
-    if (isTrialExpired && currentPlan === 'pro_trial') {
-      return false; // All features disabled after trial expires
-    }
-    
+    // Use effective plan features (which considers trial expiry)
     const value = features[feature];
     return typeof value === 'boolean' ? value : value !== 0;
   };
@@ -76,13 +85,6 @@ export function usePlanFeatures() {
     currentCount: number,
     additionalCount: number = 0
   ): { allowed: boolean; reason?: string; limit?: number } => {
-    if (isTrialExpired && currentPlan === 'pro_trial') {
-      return { 
-        allowed: false, 
-        reason: 'Your trial has expired. Please upgrade to continue.' 
-      };
-    }
-
     const limitKey = `max${resource.charAt(0).toUpperCase() + resource.slice(1)}` as keyof PlanFeatures;
     const limit = features[limitKey] as number;
     
@@ -91,9 +93,14 @@ export function usePlanFeatures() {
     }
     
     if (currentCount + additionalCount > limit) {
+      const planName = isTrialExpired && currentPlan === 'pro_trial' ? 'free' : effectivePlan;
+      const reason = isTrialExpired && currentPlan === 'pro_trial' 
+        ? `Your trial has expired. Please upgrade to continue using ${resource}.`
+        : `You've reached the ${resource} limit for your ${planName} plan (${limit} max)`;
+      
       return { 
         allowed: false, 
-        reason: `You've reached the ${resource} limit for your ${currentPlan} plan (${limit} max)`,
+        reason,
         limit 
       };
     }
@@ -102,32 +109,34 @@ export function usePlanFeatures() {
   };
 
   const showUpgradePrompt = (feature: string) => {
+    const title = isTrialExpired && currentPlan === 'pro_trial' ? "Trial Expired" : "Upgrade Required";
+    const description = isTrialExpired && currentPlan === 'pro_trial' 
+      ? `Your 14-day Pro trial has expired. Upgrade to continue using ${feature}.`
+      : `The ${feature} feature requires an upgraded plan. Your current plan is ${effectivePlan}.`;
+    
     toast({
-      title: "Upgrade Required",
-      description: `The ${feature} feature requires an upgraded plan. Your current plan is ${currentPlan}.`,
-      variant: "default",
+      title,
+      description,
+      variant: isTrialExpired ? "destructive" : "default",
       action: {
-        label: "View Plans",
+        label: "Upgrade Now",
         onClick: () => window.location.href = '/billing'
       }
     });
   };
 
   const getDaysLeftInTrial = (): number | null => {
-    if (currentPlan !== 'pro_trial' || !trialEndsAt) return null;
+    if (currentPlan !== 'pro_trial') return null;
     
-    const now = new Date();
-    const end = new Date(trialEndsAt);
-    const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    return daysLeft > 0 ? daysLeft : 0;
+    return trialStatus.daysLeft;
   };
 
   return {
     currentPlan,
+    effectivePlan,
     features,
     isTrialExpired,
-    trialEndsAt,
+    trialStatus,
     checkFeature,
     checkLimit,
     showUpgradePrompt,

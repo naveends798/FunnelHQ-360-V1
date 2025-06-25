@@ -25,6 +25,7 @@ interface CreateUserRequest {
   companySize?: string
   specialization?: string
   subscriptionPlan?: string
+  trialStartDate?: string
 }
 
 interface UpdateUserRequest {
@@ -38,6 +39,7 @@ interface UpdateUserRequest {
   subscriptionPlan?: string
   subscriptionStatus?: string
   maxProjects?: number
+  trialStartDate?: string
 }
 
 // Create or update user in Supabase
@@ -78,7 +80,8 @@ export const createOrUpdateUser = async (req: Request, res: Response) => {
           industry: userData.industry,
           company_size: userData.companySize,
           specialization: userData.specialization,
-          subscription_plan: userData.subscriptionPlan || 'solo',
+          subscription_plan: userData.subscriptionPlan || 'pro_trial',
+          trial_start_date: userData.trialStartDate,
           last_login_at: new Date().toISOString(),
         })
         .eq('email', userData.email)
@@ -105,9 +108,10 @@ export const createOrUpdateUser = async (req: Request, res: Response) => {
           industry: userData.industry,
           company_size: userData.companySize,
           specialization: userData.specialization,
-          subscription_plan: userData.subscriptionPlan || 'solo',
+          subscription_plan: userData.subscriptionPlan || 'pro_trial',
           subscription_status: 'active',
-          max_projects: userData.subscriptionPlan === 'pro' ? -1 : 3,
+          max_projects: (userData.subscriptionPlan === 'pro' || userData.subscriptionPlan === 'pro_trial') ? -1 : 3,
+          trial_start_date: userData.trialStartDate || new Date().toISOString(),
           last_login_at: new Date().toISOString(),
         }])
         .select()
@@ -305,15 +309,15 @@ export const getUserUsage = async (req: Request, res: Response) => {
       },
       collaborators: {
         used: collaboratorCount || 0,
-        limit: user.subscription_plan === 'pro' ? 'unlimited' : 0,
-        percentage: user.subscription_plan === 'pro' ? 0 : 100
+        limit: (user.subscription_plan === 'pro' || user.subscription_plan === 'pro_trial') ? 'unlimited' : 0,
+        percentage: (user.subscription_plan === 'pro' || user.subscription_plan === 'pro_trial') ? 0 : 100
       },
       storage: {
         used: storageUsed,
         usedFormatted: formatBytes(storageUsed),
-        limit: user.subscription_plan === 'pro' ? 100 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 * 1024, // 100GB or 5GB
-        limitFormatted: user.subscription_plan === 'pro' ? '100 GB' : '5 GB',
-        percentage: Math.round((storageUsed / (user.subscription_plan === 'pro' ? 100 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 * 1024)) * 100)
+        limit: (user.subscription_plan === 'pro' || user.subscription_plan === 'pro_trial') ? 100 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 * 1024, // 100GB or 5GB
+        limitFormatted: (user.subscription_plan === 'pro' || user.subscription_plan === 'pro_trial') ? '100 GB' : '5 GB',
+        percentage: Math.round((storageUsed / ((user.subscription_plan === 'pro' || user.subscription_plan === 'pro_trial') ? 100 * 1024 * 1024 * 1024 : 5 * 1024 * 1024 * 1024)) * 100)
       }
     }
 
@@ -328,6 +332,68 @@ export const getUserUsage = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error in getUserUsage:', error)
     res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// Expire trial users and downgrade to solo plan
+export const expireTrialUsers = async (req: Request, res: Response) => {
+  try {
+    const now = new Date().toISOString();
+    
+    // Find users with expired trials (pro_trial plan, no stripe subscription)
+    const { data: expiredUsers, error: fetchError } = await supabaseAdmin
+      .from('users')
+      .select('id, email, subscription_plan, trial_start_date')
+      .eq('subscription_plan', 'pro_trial')
+      .not('trial_start_date', 'is', null)
+      .is('stripe_subscription_id', null)
+      
+    if (fetchError) {
+      console.error('Error fetching trial users:', fetchError);
+      return res.status(500).json({ error: 'Failed to fetch trial users' });
+    }
+    
+    if (!expiredUsers || expiredUsers.length === 0) {
+      return res.json({ expired: 0, message: 'No expired trial users found' });
+    }
+    
+    // Filter users whose trial has actually expired (14 days)
+    const actuallyExpired = expiredUsers.filter(user => {
+      const trialStart = new Date(user.trial_start_date);
+      const trialEnd = new Date(trialStart.getTime() + (14 * 24 * 60 * 60 * 1000));
+      return trialEnd < new Date();
+    });
+    
+    if (actuallyExpired.length === 0) {
+      return res.json({ expired: 0, message: 'No expired trial users found' });
+    }
+    
+    // Update expired users to solo plan
+    const userIds = actuallyExpired.map(user => user.id);
+    const { data: updatedUsers, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({
+        subscription_plan: 'solo',
+        max_projects: 3, // Solo plan limit
+      })
+      .in('id', userIds)
+      .select();
+      
+    if (updateError) {
+      console.error('Error updating expired trial users:', updateError);
+      return res.status(500).json({ error: 'Failed to update expired trial users' });
+    }
+    
+    console.log(`Expired ${actuallyExpired.length} trial users:`, actuallyExpired.map(u => u.email));
+    
+    res.json({
+      expired: actuallyExpired.length,
+      users: updatedUsers,
+      message: `Successfully expired ${actuallyExpired.length} trial users`
+    });
+  } catch (error) {
+    console.error('Error in expireTrialUsers:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
 

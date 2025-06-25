@@ -24,20 +24,28 @@ interface AuthenticatedRequest extends Request {
 // Middleware to verify Clerk session and extract user information
 export const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    console.log('🔐 Auth middleware - Headers:', {
+      authorization: req.headers.authorization ? `Bearer ${req.headers.authorization.substring(7, 20)}...` : 'missing',
+      userAgent: req.headers['user-agent']?.substring(0, 50)
+    });
+
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ Auth middleware - Missing or invalid auth header');
       return res.status(401).json({ error: 'Missing or invalid authorization header' });
     }
 
     const sessionToken = authHeader.substring(7);
+    console.log('🎫 Auth middleware - Token length:', sessionToken.length);
     
     // Verify the session token with Clerk
-    const session = await clerkClient.sessions.verifySession(sessionToken, {
-      // Add any verification options if needed
-    });
+    const session = await clerkClient.sessions.verifySession(sessionToken);
+
+    console.log('✅ Auth middleware - Session verified:', { userId: session.userId, status: session.status });
 
     if (!session || !session.userId) {
+      console.log('❌ Auth middleware - Invalid session');
       return res.status(401).json({ error: 'Invalid session token' });
     }
 
@@ -49,9 +57,31 @@ export const authenticateUser = async (req: AuthenticatedRequest, res: Response,
     req.userRole = publicMetadata?.role || 'client';
     req.organizationId = publicMetadata?.organizationId;
 
+    console.log('👤 Auth middleware - User authenticated:', { 
+      userId: session.userId, 
+      role: req.userRole,
+      orgId: req.organizationId 
+    });
+
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('❌ Authentication error:', error);
+    
+    // In development, provide more detailed error information
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Auth error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack?.substring(0, 500)
+      });
+      
+      return res.status(401).json({ 
+        error: 'Authentication failed',
+        details: error.message,
+        hint: 'Check if user is signed in to Clerk and has valid session'
+      });
+    }
+    
     return res.status(401).json({ error: 'Authentication failed' });
   }
 };

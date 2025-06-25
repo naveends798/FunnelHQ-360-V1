@@ -461,9 +461,275 @@ export class MemStorage implements IStorage {
 
     sampleInvitations.forEach(invitation => this.teamInvitations.set(invitation.id, invitation));
 
-    // Onboarding forms are created dynamically by users
-    
-    // Form submissions are created when clients submit onboarding forms
+    // Create sample onboarding forms
+    const sampleOnboardingForms: OnboardingForm[] = [
+      {
+        id: this.currentOnboardingFormId++,
+        ownerId: 1,
+        organizationId: 1,
+        projectId: 1,
+        title: "Website Project Onboarding",
+        description: "Please provide us with all the necessary information to get started on your website project.",
+        fields: [
+          {
+            id: "business_info",
+            type: "section",
+            label: "Business Information",
+            required: false,
+            options: []
+          },
+          {
+            id: "company_name",
+            type: "text",
+            label: "Company Name",
+            required: true,
+            placeholder: "Enter your company name",
+            options: []
+          },
+          {
+            id: "industry",
+            type: "select",
+            label: "Industry",
+            required: true,
+            options: [
+              { label: "Technology", value: "technology" },
+              { label: "Healthcare", value: "healthcare" },
+              { label: "Finance", value: "finance" },
+              { label: "Education", value: "education" },
+              { label: "E-commerce", value: "ecommerce" },
+              { label: "Other", value: "other" }
+            ]
+          },
+          {
+            id: "company_size",
+            type: "radio",
+            label: "Company Size",
+            required: true,
+            options: [
+              { label: "1-10 employees", value: "1-10" },
+              { label: "11-50 employees", value: "11-50" },
+              { label: "51-200 employees", value: "51-200" },
+              { label: "200+ employees", value: "200+" }
+            ]
+          },
+          {
+            id: "project_goals",
+            type: "textarea",
+            label: "Project Goals",
+            required: true,
+            placeholder: "Describe your main goals for this project...",
+            options: []
+          },
+          {
+            id: "target_audience",
+            type: "textarea",
+            label: "Target Audience",
+            required: true,
+            placeholder: "Who is your target audience?",
+            options: []
+          },
+          {
+            id: "brand_colors",
+            type: "text",
+            label: "Brand Colors (if any)",
+            required: false,
+            placeholder: "e.g., #FF5733, #3498DB",
+            options: []
+          },
+          {
+            id: "inspiration_sites",
+            type: "textarea",
+            label: "Inspiration Websites",
+            required: false,
+            placeholder: "List any websites you like and why...",
+            options: []
+          },
+          {
+            id: "additional_services",
+            type: "checkbox",
+            label: "Additional Services Needed",
+            required: false,
+            options: [
+              { label: "Logo Design", value: "logo" },
+              { label: "Content Writing", value: "content" },
+              { label: "SEO Optimization", value: "seo" },
+              { label: "Social Media Setup", value: "social" },
+              { label: "E-commerce Setup", value: "ecommerce" }
+            ]
+          }
+        ],
+        isTemplate: false,
+        isActive: true,
+        createdBy: 1,
+        createdAt: new Date("2024-06-10"),
+        updatedAt: new Date("2024-06-15")
+      },
+      {
+        id: this.currentOnboardingFormId++,
+        ownerId: 1,
+        organizationId: 1,
+        projectId: null, // General organization form
+        title: "General Client Intake Form",
+        description: "A comprehensive form to gather client information for any type of project.",
+        fields: [
+          {
+            id: "contact_section",
+            type: "section",
+            label: "Contact Information",
+            required: false,
+            options: []
+          },
+          {
+            id: "primary_contact",
+            type: "text",
+            label: "Primary Contact Name",
+            required: true,
+            placeholder: "Full name of primary contact",
+            options: []
+          },
+          {
+            id: "email",
+            type: "email",
+            label: "Email Address",
+            required: true,
+            placeholder: "contact@company.com",
+            options: []
+          },
+          {
+            id: "phone",
+            type: "tel",
+            label: "Phone Number",
+            required: false,
+            placeholder: "+1 (555) 123-4567",
+            options: []
+          },
+          {
+            id: "project_section",
+            type: "section",
+            label: "Project Details",
+            required: false,
+            options: []
+          },
+          {
+            id: "project_type",
+            type: "select",
+            label: "Project Type",
+            required: true,
+            options: [
+              { label: "Website Development", value: "website" },
+              { label: "Mobile App", value: "mobile" },
+              { label: "Branding & Design", value: "branding" },
+              { label: "Marketing Campaign", value: "marketing" },
+              { label: "Consulting", value: "consulting" }
+            ]
+          },
+          {
+            id: "budget_range",
+            type: "select",
+            label: "Budget Range",
+            required: true,
+            options: [
+              { label: "$5,000 - $10,000", value: "5k-10k" },
+              { label: "$10,000 - $25,000", value: "10k-25k" },
+              { label: "$25,000 - $50,000", value: "25k-50k" },
+              { label: "$50,000+", value: "50k+" }
+            ]
+          },
+          {
+            id: "timeline",
+            type: "select",
+            label: "Desired Timeline",
+            required: true,
+            options: [
+              { label: "1-2 months", value: "1-2" },
+              { label: "3-4 months", value: "3-4" },
+              { label: "5-6 months", value: "5-6" },
+              { label: "6+ months", value: "6+" }
+            ]
+          },
+          {
+            id: "project_description",
+            type: "textarea",
+            label: "Project Description",
+            required: true,
+            placeholder: "Please describe your project in detail...",
+            options: []
+          }
+        ],
+        isTemplate: true,
+        isActive: true,
+        createdBy: 1,
+        createdAt: new Date("2024-06-05"),
+        updatedAt: new Date("2024-06-05")
+      }
+    ];
+
+    sampleOnboardingForms.forEach(form => this.onboardingForms.set(form.id, form));
+
+    // Create sample form submissions
+    const sampleFormSubmissions: FormSubmission[] = [
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 1,
+        projectId: 1,
+        clientId: 1,
+        responses: {
+          company_name: "TechCorp Solutions",
+          industry: "technology",
+          company_size: "11-50",
+          project_goals: "We need a modern, responsive website that showcases our software solutions and attracts enterprise clients. The site should be professional, fast-loading, and optimized for conversions.",
+          target_audience: "Enterprise decision-makers, CTOs, and business owners looking for technology solutions. Age range 30-55, primarily in North America and Europe.",
+          brand_colors: "#2563EB, #1F2937, #F3F4F6",
+          inspiration_sites: "stripe.com - love their clean design and clear messaging\nvercel.com - great use of gradients and animations\nsalesforce.com - comprehensive but not overwhelming",
+          additional_services: ["seo", "content"]
+        },
+        submittedAt: new Date("2024-06-12T10:30:00"),
+        isCompleted: true,
+        reviewedBy: 1,
+        reviewedAt: new Date("2024-06-12T14:20:00")
+      },
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 1,
+        projectId: 2,
+        clientId: 2,
+        responses: {
+          company_name: "Green Earth Consulting",
+          industry: "other",
+          company_size: "1-10",
+          project_goals: "Create an online presence for our environmental consulting firm. We want to educate visitors about sustainability and showcase our case studies.",
+          target_audience: "Small to medium businesses looking to improve their environmental impact. Government agencies needing compliance consulting.",
+          brand_colors: "#059669, #064E3B",
+          inspiration_sites: "patagonia.com - love their environmental messaging",
+          additional_services: ["content", "seo"]
+        },
+        submittedAt: new Date("2024-06-14T16:45:00"),
+        isCompleted: true,
+        reviewedBy: null,
+        reviewedAt: null
+      },
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 2,
+        projectId: 3,
+        clientId: 3,
+        responses: {
+          primary_contact: "Michael Rodriguez",
+          email: "michael@creativestudio.com",
+          phone: "+1 (555) 987-6543",
+          project_type: "branding",
+          budget_range: "10k-25k",
+          timeline: "3-4",
+          project_description: "We're a creative agency that needs a complete rebrand. Our current brand feels outdated and doesn't reflect our modern, innovative approach. We need a new logo, color palette, typography system, and brand guidelines."
+        },
+        submittedAt: new Date("2024-06-16T09:15:00"),
+        isCompleted: true,
+        reviewedBy: 2,
+        reviewedAt: new Date("2024-06-16T11:30:00")
+      }
+    ];
+
+    sampleFormSubmissions.forEach(submission => this.formSubmissions.set(submission.id, submission));
 
     // Create sample project comments
     const sampleProjectComments: ProjectComment[] = [
@@ -2572,6 +2838,7 @@ export class MemStorage implements IStorage {
 // Import Supabase storage for production
 import { SupabaseStorage } from './supabase-storage';
 
-// CRITICAL: Force Supabase storage for ALL environments to prevent data loss
-// Previously using MemStorage in development was causing complete data loss
-export const storage = new SupabaseStorage();
+// Use Supabase in production, memory storage in development
+export const storage = process.env.NODE_ENV === 'production' 
+  ? new SupabaseStorage() 
+  : new MemStorage();

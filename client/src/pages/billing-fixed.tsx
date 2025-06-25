@@ -16,34 +16,23 @@ import { Progress } from "@/components/ui/progress";
 import { Tab } from "@/components/ui/pricing-tab";
 import { PricingCards, type PricingTier } from "@/components/ui/pricing-cards";
 import { BILLING_PLANS, type OrganizationWithBilling, type BillingPlan } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { useTrialStatus } from "@/hooks/useTrialStatus";
 import Sidebar from "@/components/sidebar";
+import { TrialBanner } from "@/components/trial-banner";
 
 export default function BillingFixedPage() {
-  const [billingData, setBillingData] = useState<OrganizationWithBilling | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { authUser } = useAuth();
+  const trialStatus = useTrialStatus();
+  const [loading, setLoading] = useState(false);
   const [upgrading, setUpgrading] = useState<BillingPlan | null>(null);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
 
-  // Mock organization ID - in real app, get from auth context
-  const organizationId = 1;
-
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
-
-  const fetchBillingData = async () => {
-    try {
-      const response = await fetch(`/api/billing/${organizationId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setBillingData(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch billing data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use authUser data instead of fetching organization data
+  const isOnProTrial = authUser?.subscriptionPlan === 'pro_trial';
+  const isTrialExpired = trialStatus.isTrialExpired;
+  const currentPlanKey = isTrialExpired ? 'solo' : (authUser?.subscriptionPlan as BillingPlan || 'solo');
+  const currentPlan = BILLING_PLANS[currentPlanKey as keyof typeof BILLING_PLANS];
 
   const handleUpgrade = async (plan: BillingPlan) => {
     setUpgrading(plan);
@@ -52,7 +41,7 @@ export default function BillingFixedPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          organizationId,
+          userId: authUser?.id,
           plan,
           successUrl: window.location.origin + "/billing?success=true",
           cancelUrl: window.location.origin + "/billing?canceled=true"
@@ -78,7 +67,7 @@ export default function BillingFixedPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (loading) {
+  if (!authUser) {
     return (
       <div className="min-h-screen gradient-bg relative overflow-hidden">
         <Sidebar />
@@ -91,27 +80,21 @@ export default function BillingFixedPage() {
     );
   }
 
-  if (!billingData) {
-    return (
-      <div className="min-h-screen gradient-bg relative overflow-hidden">
-        <Sidebar />
-        <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-          <div className="text-center py-12">
-            <p className="text-white">Failed to load billing information</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  const currentPlan = billingData.currentPlan;
-  const usage = billingData.usage;
+  // Mock usage data - in real app, this would come from API
+  const usage = {
+    projects: 1,
+    teamMembers: 1,
+    storage: 500 * 1024 * 1024 // 500MB
+  };
 
   return (
     <div className="min-h-screen gradient-bg relative overflow-hidden">
       <Sidebar />
       <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
         <div className="space-y-8">
+          {/* Trial Banner */}
+          <TrialBanner />
+          
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -122,7 +105,7 @@ export default function BillingFixedPage() {
                 Manage your subscription and monitor usage across your organization
               </p>
             </div>
-            {billingData.stripeCustomerId && (
+            {authUser.stripeCustomerId && (
               <Button variant="outline" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Manage Billing
@@ -137,17 +120,20 @@ export default function BillingFixedPage() {
                 <div>
                   <CardTitle className="text-xl flex items-center gap-2 text-white">
                     <CreditCard className="h-5 w-5 text-primary" />
-                    Current Plan: {currentPlan.name}
+                    {isOnProTrial ? 'Pro Trial' : `Current Plan: ${currentPlan.name}`}
                   </CardTitle>
                   <CardDescription className="text-slate-400">
-                    ${currentPlan.price}/{currentPlan.interval}
+                    {isOnProTrial 
+                      ? `${trialStatus.daysLeft} days remaining` 
+                      : `$${currentPlan.price}/${currentPlan.interval}`
+                    }
                   </CardDescription>
                 </div>
                 <Badge 
-                  variant={billingData.subscriptionStatus === 'active' ? 'default' : 'destructive'}
+                  variant={isOnProTrial ? 'default' : (authUser.subscriptionStatus === 'active' ? 'default' : 'destructive')}
                   className="text-sm"
                 >
-                  {billingData.subscriptionStatus || 'Active'}
+                  {isOnProTrial ? 'Trial' : authUser.subscriptionStatus || 'Active'}
                 </Badge>
               </div>
             </CardHeader>
@@ -161,10 +147,10 @@ export default function BillingFixedPage() {
                       Projects
                     </span>
                     <span className="text-sm text-slate-400">
-                      {usage.projects} / {currentPlan.limits.projects === -1 ? '∞' : currentPlan.limits.projects}
+                      {usage.projects} / {(isOnProTrial ? '∞' : (currentPlan.limits.projects === -1 ? '∞' : currentPlan.limits.projects))}
                     </span>
                   </div>
-                  {currentPlan.limits.projects !== -1 && (
+                  {!isOnProTrial && currentPlan.limits.projects !== -1 && (
                     <Progress 
                       value={(usage.projects / currentPlan.limits.projects) * 100}
                       className="h-2"
@@ -180,12 +166,12 @@ export default function BillingFixedPage() {
                       Team Members
                     </span>
                     <span className="text-sm text-slate-400">
-                      {usage.teamMembers} / {currentPlan.limits.teamMembers === -1 ? '∞' : currentPlan.limits.teamMembers}
+                      {usage.teamMembers} / {(isOnProTrial ? '∞' : (currentPlan.limits.collaborators === -1 ? '∞' : currentPlan.limits.collaborators))}
                     </span>
                   </div>
-                  {currentPlan.limits.teamMembers !== -1 && (
+                  {!isOnProTrial && currentPlan.limits.collaborators !== -1 && (
                     <Progress 
-                      value={(usage.teamMembers / currentPlan.limits.teamMembers) * 100}
+                      value={(usage.teamMembers / currentPlan.limits.collaborators) * 100}
                       className="h-2"
                     />
                   )}
@@ -199,10 +185,10 @@ export default function BillingFixedPage() {
                       Storage
                     </span>
                     <span className="text-sm text-slate-400">
-                      {formatBytes(usage.storage)} / {currentPlan.limits.storage === -1 ? '∞' : formatBytes(currentPlan.limits.storage)}
+                      {formatBytes(usage.storage)} / {(isOnProTrial ? '100 GB' : (currentPlan.limits.storage === -1 ? '∞' : formatBytes(currentPlan.limits.storage)))}
                     </span>
                   </div>
-                  {currentPlan.limits.storage !== -1 && (
+                  {!isOnProTrial && currentPlan.limits.storage !== -1 && (
                     <Progress 
                       value={(usage.storage / currentPlan.limits.storage) * 100}
                       className="h-2"
@@ -237,7 +223,8 @@ export default function BillingFixedPage() {
             
             <PricingCards 
               tiers={Object.entries(BILLING_PLANS).map(([planKey, plan]) => {
-                const isCurrentPlan = planKey === (billingData.subscriptionPlan || 'solo');
+                // For pro_trial users, don't highlight any plan
+                const isCurrentPlan = !isOnProTrial && planKey === authUser.subscriptionPlan;
                 const currentPrice = billingInterval === 'yearly' ? plan.yearlyPrice : plan.price;
                 const interval = billingInterval === 'yearly' ? '/year' : '/month';
                 
@@ -246,6 +233,12 @@ export default function BillingFixedPage() {
                 const yearlyCost = plan.yearlyPrice * 12;
                 const savings = monthlyCost - yearlyCost;
                 const savingsText = billingInterval === 'yearly' ? ` (Save $${savings}/year)` : '';
+                
+                // For pro_trial users, show "Get [Plan] Plan" instead of current plan or generic text
+                let ctaText = isCurrentPlan ? `Current ${plan.name} Plan` : `Get ${plan.name} Plan`;
+                if (isOnProTrial) {
+                  ctaText = `Get ${plan.name} Plan`;
+                }
                 
                 return {
                   name: plan.name,
@@ -258,7 +251,7 @@ export default function BillingFixedPage() {
                     included: true
                   })),
                   cta: {
-                    text: isCurrentPlan ? `Current ${plan.name} Plan` : "Let's Scale",
+                    text: ctaText,
                     onClick: isCurrentPlan ? undefined : () => handleUpgrade(planKey as BillingPlan)
                   }
                 } as PricingTier;

@@ -105,7 +105,7 @@ export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps
   useEffect(() => {
     if (form) {
       const defaults = {
-        ownerId: 1, // User who owns this form
+        ownerId: 8, // Using existing user ID
         organizationId: 1,
         projectId: null as number | null,
         title: "",
@@ -113,7 +113,7 @@ export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps
         fields: [] as FormField[],
         isTemplate: false,
         isActive: true,
-        createdBy: 1
+        createdBy: 8 // Using existing user ID
       };
       setFormData({ ...defaults, ...form });
     }
@@ -142,8 +142,8 @@ export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps
 
     if (type === 'select' || type === 'radio' || type === 'checkbox') {
       newField.options = [
-        { label: "Option 1", value: "option1" },
-        { label: "Option 2", value: "option2" }
+        { label: "First Choice", value: "choice1" },
+        { label: "Second Choice", value: "choice2" }
       ];
     } else {
       newField.options = [];
@@ -200,8 +200,8 @@ export default function FormBuilder({ form, onSave, onCancel }: FormBuilderProps
     if (field) {
       const currentOptions = field.options || [];
       const newOption = {
-        label: `Option ${currentOptions.length + 1}`,
-        value: `option${currentOptions.length + 1}`
+        label: `Choice ${currentOptions.length + 1}`,
+        value: `choice${currentOptions.length + 1}`
       };
       updateField(fieldId, {
         options: [...currentOptions, newOption]

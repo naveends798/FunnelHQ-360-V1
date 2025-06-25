@@ -147,7 +147,8 @@ async function handleUserCreated(data) {
       email: email_addresses?.[0]?.email_address,
       name: `${first_name || ''} ${last_name || ''}`.trim(),
       clerkUserId: id,
-      subscriptionPlan: 'pro_trial' // New users get 14-day trial
+      subscriptionPlan: 'pro_trial', // Start with pro trial
+      trialStartDate: new Date().toISOString() // Set trial start date to now
     };
 
     console.log('🔄 Creating user in Supabase:', userData);

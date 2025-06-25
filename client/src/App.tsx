@@ -7,7 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SupabaseProvider } from "@/contexts/supabase-context";
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { setAuthTokenGetter } from "./lib/queryClient";
 import Dashboard from "@/pages/dashboard";
 import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
@@ -295,8 +296,30 @@ function Router() {
   );
 }
 
+// Component to set up authentication for API calls
+function AuthSetup({ children }: { children: React.ReactNode }) {
+  const { getToken } = useClerkAuth();
+
+  React.useEffect(() => {
+    // Set up the auth token getter for all API calls
+    setAuthTokenGetter(async () => {
+      try {
+        const token = await getToken();
+        console.log('🎫 AuthSetup - Token retrieved:', token ? `${token.substring(0, 20)}...` : 'null');
+        return token;
+      } catch (error) {
+        console.warn("❌ AuthSetup - Failed to get Clerk token:", error);
+        return null;
+      }
+    });
+  }, [getToken]);
+
+  return <>{children}</>;
+}
+
 function App() {
   console.log("🎯 App component rendering...");
+  console.log("🔑 Clerk key:", import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ? `${import.meta.env.VITE_CLERK_PUBLISHABLE_KEY.substring(0, 20)}...` : 'MISSING');
 
   const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -309,19 +332,21 @@ function App() {
 
   return (
     <ClerkProvider publishableKey={clerkPublishableKey}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="funnel-portal-theme">
-          <AuthProvider>
-            <SupabaseProvider>
-              <TooltipProvider>
-                <MobileOptimizations />
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </SupabaseProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <AuthSetup>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="dark" storageKey="funnel-portal-theme">
+            <AuthProvider>
+              <SupabaseProvider>
+                <TooltipProvider>
+                  <MobileOptimizations />
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </SupabaseProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </AuthSetup>
     </ClerkProvider>
   );
 }

@@ -462,8 +462,71 @@ export class MemStorage implements IStorage {
     sampleInvitations.forEach(invitation => this.teamInvitations.set(invitation.id, invitation));
 
     // Onboarding forms are created dynamically by users
-    
-    // Form submissions are created when clients submit onboarding forms
+
+    // Create sample form submissions
+    const sampleFormSubmissions: FormSubmission[] = [
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 1,
+        projectId: 1,
+        clientId: 1,
+        responses: {
+          company_name: "TechCorp Solutions",
+          industry: "technology",
+          company_size: "11-50",
+          project_goals: "We need a modern, responsive website that showcases our software solutions and attracts enterprise clients. The site should be professional, fast-loading, and optimized for conversions.",
+          target_audience: "Enterprise decision-makers, CTOs, and business owners looking for technology solutions. Age range 30-55, primarily in North America and Europe.",
+          brand_colors: "#2563EB, #1F2937, #F3F4F6",
+          inspiration_sites: "stripe.com - love their clean design and clear messaging\nvercel.com - great use of gradients and animations\nsalesforce.com - comprehensive but not overwhelming",
+          additional_services: ["seo", "content"]
+        },
+        submittedAt: new Date("2024-06-12T10:30:00"),
+        isCompleted: true,
+        reviewedBy: 1,
+        reviewedAt: new Date("2024-06-12T14:20:00")
+      },
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 1,
+        projectId: 2,
+        clientId: 2,
+        responses: {
+          company_name: "Green Earth Consulting",
+          industry: "other",
+          company_size: "1-10",
+          project_goals: "Create an online presence for our environmental consulting firm. We want to educate visitors about sustainability and showcase our case studies.",
+          target_audience: "Small to medium businesses looking to improve their environmental impact. Government agencies needing compliance consulting.",
+          brand_colors: "#059669, #064E3B",
+          inspiration_sites: "patagonia.com - love their environmental messaging",
+          additional_services: ["content", "seo"]
+        },
+        submittedAt: new Date("2024-06-14T16:45:00"),
+        isCompleted: true,
+        reviewedBy: null,
+        reviewedAt: null
+      },
+      {
+        id: this.currentFormSubmissionId++,
+        formId: 2,
+        projectId: 3,
+        clientId: 3,
+        responses: {
+          primary_contact: "Michael Rodriguez",
+          email: "michael@creativestudio.com",
+          phone: "+1 (555) 987-6543",
+          project_type: "branding",
+          budget_range: "10k-25k",
+          timeline: "3-4",
+          project_description: "We're a creative agency that needs a complete rebrand. Our current brand feels outdated and doesn't reflect our modern, innovative approach. We need a new logo, color palette, typography system, and brand guidelines."
+        },
+        submittedAt: new Date("2024-06-16T09:15:00"),
+        isCompleted: true,
+        reviewedBy: 2,
+        reviewedAt: new Date("2024-06-16T11:30:00")
+      }
+    ];
+
+    sampleFormSubmissions.forEach(submission => this.formSubmissions.set(submission.id, submission));
 
     // Create sample project comments
     const sampleProjectComments: ProjectComment[] = [
@@ -2572,6 +2635,7 @@ export class MemStorage implements IStorage {
 // Import Supabase storage for production
 import { SupabaseStorage } from './supabase-storage';
 
-// CRITICAL: Force Supabase storage for ALL environments to prevent data loss
-// Previously using MemStorage in development was causing complete data loss
-export const storage = new SupabaseStorage();
+// Use Supabase in production, memory storage in development
+export const storage = process.env.NODE_ENV === 'production' 
+  ? new SupabaseStorage() 
+  : new MemStorage();

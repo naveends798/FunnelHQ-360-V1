@@ -4,7 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
-  SECRETS_SCAN_OMIT_PATHS = ".env.netlify.example"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_ANON_KEY"
 
 [functions]
   directory = "netlify/functions/"

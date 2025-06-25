@@ -26,7 +26,17 @@ export default function CompleteProfilePage() {
     e.preventDefault();
     setLoading(true);
 
+    // Validate required fields
+    if (!formData.companyName || !formData.industry || !formData.companySize || !formData.companyRole || !formData.specialization) {
+      console.error('Missing required fields:', formData);
+      alert('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Submitting profile data:', formData);
+      
       // Update user metadata in Clerk
       await user?.update({
         publicMetadata: {
@@ -50,6 +60,8 @@ export default function CompleteProfilePage() {
         })
       });
 
+      console.log('Profile completion response:', response.status);
+
       if (response.ok) {
         // For admin users, set up trial and go directly to dashboard
         const userRole = user?.publicMetadata?.role || 'admin';
@@ -66,14 +78,17 @@ export default function CompleteProfilePage() {
           });
         }
         
+        console.log('Navigating to dashboard...');
         // Skip onboarding and go directly to dashboard
         setLocation('/dashboard');
       } else {
-        throw new Error('Failed to complete profile');
+        const errorData = await response.text();
+        console.error('Server error:', errorData);
+        throw new Error(`Failed to complete profile: ${response.status}`);
       }
     } catch (error) {
       console.error('Error completing profile:', error);
-      // Handle error - show toast or error message
+      alert(`Error completing profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -112,7 +127,7 @@ export default function CompleteProfilePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-gray-300">Company Name</Label>
+                  <Label htmlFor="companyName" className="text-gray-300">Company Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="companyName"
                     placeholder="Acme Agency"
@@ -124,7 +139,7 @@ export default function CompleteProfilePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="industry" className="text-gray-300">Industry</Label>
+                  <Label htmlFor="industry" className="text-gray-300">Industry <span className="text-red-500">*</span></Label>
                   <Select value={formData.industry} onValueChange={(value) => setFormData(prev => ({ ...prev, industry: value }))}>
                     <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                       <SelectValue placeholder="Select industry" />
@@ -143,7 +158,7 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="companySize" className="text-gray-300">Company Size</Label>
+                <Label htmlFor="companySize" className="text-gray-300">Company Size <span className="text-red-500">*</span></Label>
                 <Select value={formData.companySize} onValueChange={(value) => setFormData(prev => ({ ...prev, companySize: value }))}>
                   <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                     <SelectValue placeholder="Select company size" />
@@ -168,7 +183,7 @@ export default function CompleteProfilePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyRole" className="text-gray-300">Your Role</Label>
+                  <Label htmlFor="companyRole" className="text-gray-300">Your Role <span className="text-red-500">*</span></Label>
                   <Select value={formData.companyRole} onValueChange={(value) => setFormData(prev => ({ ...prev, companyRole: value }))}>
                     <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                       <SelectValue placeholder="Select your role" />
@@ -185,7 +200,7 @@ export default function CompleteProfilePage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="specialization" className="text-gray-300">Specialization</Label>
+                  <Label htmlFor="specialization" className="text-gray-300">Specialization <span className="text-red-500">*</span></Label>
                   <Select value={formData.specialization} onValueChange={(value) => setFormData(prev => ({ ...prev, specialization: value }))}>
                     <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                       <SelectValue placeholder="Select specialization" />

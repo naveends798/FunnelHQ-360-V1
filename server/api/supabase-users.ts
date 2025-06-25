@@ -17,6 +17,7 @@ const supabaseAdmin = createClient<Database>(
 interface CreateUserRequest {
   email: string
   name: string
+  clerkUserId?: string
   avatar?: string
   companyName?: string
   companyRole?: string
@@ -70,6 +71,7 @@ export const createOrUpdateUser = async (req: Request, res: Response) => {
         .from('users')
         .update({
           name: userData.name,
+          clerk_user_id: userData.clerkUserId,
           avatar: userData.avatar,
           company_name: userData.companyName,
           company_role: userData.companyRole,
@@ -96,6 +98,7 @@ export const createOrUpdateUser = async (req: Request, res: Response) => {
         .insert([{
           email: userData.email,
           name: userData.name,
+          clerk_user_id: userData.clerkUserId,
           avatar: userData.avatar,
           company_name: userData.companyName,
           company_role: userData.companyRole,

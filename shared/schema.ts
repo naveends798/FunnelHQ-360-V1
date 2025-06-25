@@ -4,6 +4,7 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  clerkUserId: text("clerk_user_id").unique(), // Clerk user ID
   supabaseId: uuid("supabase_id").unique(), // Supabase auth user ID
   username: text("username").unique(),
   email: text("email").notNull().unique(),
